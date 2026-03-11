@@ -1,15 +1,16 @@
 const apiUrl = '/api/epis';
 
-const coresCategoria = {
-    'EPI': 'bg-warning text-dark',
-    'Consumível': 'bg-info text-dark',
-    'Ferramenta': 'bg-secondary',
-    'Gás': 'bg-danger',
-    'Cobre': 'bg-success',
-    'Outros': 'bg-dark'
+const estilosCategoria = {
+    'EPI': 'bg-warning bg-opacity-10 text-warning-emphasis border border-warning-subtle',
+    'Consumível': 'bg-info bg-opacity-10 text-info-emphasis border border-info-subtle',
+    'Ferramenta': 'bg-secondary bg-opacity-10 text-secondary-emphasis border border-secondary-subtle',
+    'Gás': 'bg-danger bg-opacity-10 text-danger-emphasis border border-danger-subtle',
+    'Cobre': 'bg-success bg-opacity-10 text-success-emphasis border border-success-subtle',
+    'Outros': 'bg-dark bg-opacity-10 text-dark-emphasis border border-dark-subtle'
 };
 
-// Mostra ou esconde campos de medidas baseado na categoria
+const painelFormulario = new bootstrap.Offcanvas(document.getElementById('painelFormulario'));
+
 document.getElementById('categoria').addEventListener('change', (e) => {
     const categoria = e.target.value;
     const divMedidas = document.getElementById('camposMedidas');
@@ -24,63 +25,92 @@ document.getElementById('categoria').addEventListener('change', (e) => {
 
 let listaEpis = []; 
 
-// Função que desenha a tabela na tela
+window.abrirPainelNovo = function() {
+    document.getElementById('formEpi').reset();
+    document.getElementById('editandoId').value = '';
+    document.getElementById('categoria').dispatchEvent(new Event('change'));
+    
+    document.getElementById('tituloForm').innerHTML = '<i class="bi bi-box-seam text-primary"></i> Cadastrar Material';
+    const btnSalvar = document.getElementById('btnSalvar');
+    btnSalvar.innerHTML = 'Confirmar Cadastro';
+    btnSalvar.className = 'btn btn-premium btn-lg fs-6 w-100 justify-content-center';
+    
+    painelFormulario.show();
+};
+
 function renderizarTabela(dados) {
     const tbody = document.getElementById('tabelaEpis');
     tbody.innerHTML = ''; 
+    document.getElementById('totalItens').innerHTML = `${dados.length} itens localizados`;
+
+    // VERIFICA ESTOQUE MÍNIMO PARA O ALERTA TOPO
+    let itensEmAlerta = dados.filter(epi => epi.quantidade <= (epi.estoque_minimo || 0));
+    const divAlerta = document.getElementById('alertaEstoqueBaixo');
     
-    dados.forEach(epi => {
-        const corBadge = coresCategoria[epi.categoria] || 'bg-secondary';
+    if(itensEmAlerta.length > 0) {
+        divAlerta.classList.remove('d-none');
+        document.getElementById('textoAlertaEstoque').innerText = `Atenção: Você possui ${itensEmAlerta.length} item(ns) que atingiram ou estão abaixo do estoque mínimo definido.`;
+    } else {
+        divAlerta.classList.add('d-none');
+    }
+
+    dados.forEach((epi, index) => {
+        const estiloBadge = estilosCategoria[epi.categoria] || estilosCategoria['Outros'];
         
-        let textoMedidas = '-';
+        let textoMedidas = '<span class="text-muted opacity-25">-</span>';
         if (epi.peso && epi.comprimento) textoMedidas = `${epi.peso}kg / ${epi.comprimento}m`;
         else if (epi.peso) textoMedidas = `${epi.peso}kg`;
         else if (epi.comprimento) textoMedidas = `${epi.comprimento}m`;
 
         const tr = document.createElement('tr');
+        tr.className = 'linha-animada';
+        tr.style.animationDelay = `${index * 0.03}s`;
+        
+        // COR DA BOLINHA DE QUANTIDADE NA TABELA
+        let badgeQtd = '';
+        if (epi.quantidade <= (epi.estoque_minimo || 0)) {
+            badgeQtd = `<span class="badge bg-danger text-white px-3 py-2 rounded-pill fs-6 shadow-sm" title="Abaixo do estoque mínimo!"><i class="bi bi-arrow-down-circle me-1"></i>${epi.quantidade}</span>`;
+        } else {
+            badgeQtd = `<span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-3 py-2 rounded-pill fs-6">${epi.quantidade}</span>`;
+        }
+        
         tr.innerHTML = `
-            <td class="text-muted small fw-bold">${epi.codigo_identificacao || '-'}</td>
-            <td class="fw-bold text-uppercase">${epi.nome}</td>
-            <td><span class="badge ${corBadge} rounded-pill">${epi.categoria}</span></td>
-            <td class="text-muted small">${textoMedidas}</td>
-            <td class="text-center">
-                <span class="badge ${epi.quantidade > 0 ? 'bg-success' : 'bg-danger'} fs-6 rounded-3 px-3 py-1">${epi.quantidade}</span>
-            </td>
-            <td class="text-center">
-                <button class="btn btn-sm btn-outline-primary fw-bold" onclick="prepararEdicao(${epi.id})">✏️ Editar</button>
+            <td class="text-muted" style="font-family: monospace;">${epi.codigo_identificacao || '-'}</td>
+            <td class="fw-bold">${epi.nome}</td>
+            <td><span class="badge badge-soft ${estiloBadge}">${epi.categoria}</span></td>
+            <td class="text-muted" style="font-size: 0.8rem;">${textoMedidas}</td>
+            <td class="text-center">${badgeQtd}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-light border text-primary fw-semibold" onclick="prepararEdicao(${epi.id})">
+                    <i class="bi bi-pencil-square me-1"></i> Editar
+                </button>
             </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-// Busca os dados no banco
 async function carregarEpis() {
     try {
         const response = await fetch(apiUrl);
         listaEpis = await response.json();
         renderizarTabela(listaEpis); 
     } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+        console.error('Erro:', error);
     }
 }
 
-// BARRA DE PESQUISA EM TEMPO REAL
 document.getElementById('barraPesquisa').addEventListener('input', (e) => {
     const termo = e.target.value.toLowerCase();
-    
     const resultadosFiltrados = listaEpis.filter(epi => {
         const nomeMatch = epi.nome.toLowerCase().includes(termo);
         const codMatch = epi.codigo_identificacao ? epi.codigo_identificacao.toLowerCase().includes(termo) : false;
         const catMatch = epi.categoria.toLowerCase().includes(termo);
-        
         return nomeMatch || codMatch || catMatch;
     });
-    
     renderizarTabela(resultadosFiltrados); 
 });
 
-// Prepara o formulário para edição
 window.prepararEdicao = function(id) {
     const epi = listaEpis.find(item => item.id === id);
     if (!epi) return;
@@ -95,39 +125,20 @@ window.prepararEdicao = function(id) {
     document.getElementById('comprimento').value = epi.comprimento || '';
     document.getElementById('ca').value = epi.numero_ca || '';
     
-    if (epi.validade_ca) {
-        document.getElementById('validade').value = epi.validade_ca.split('T')[0];
-    } else {
-        document.getElementById('validade').value = '';
-    }
+    if (epi.validade_ca) document.getElementById('validade').value = epi.validade_ca.split('T')[0];
+    else document.getElementById('validade').value = '';
     
     document.getElementById('quantidade').value = epi.quantidade;
+    document.getElementById('estoque_minimo').value = epi.estoque_minimo || 0;
 
-    document.getElementById('tituloForm').innerText = '✏️ Editar Material';
-    document.getElementById('tituloForm').classList.replace('bg-primary', 'bg-warning');
-    document.getElementById('tituloForm').classList.replace('text-white', 'text-dark');
-    document.getElementById('btnSalvar').innerText = 'Atualizar Material';
-    document.getElementById('btnSalvar').classList.replace('btn-primary', 'btn-warning');
-    document.getElementById('btnCancelarEdicao').classList.remove('d-none');
+    document.getElementById('tituloForm').innerHTML = '<i class="bi bi-pencil-square text-warning"></i> Editar Material';
+    const btnSalvar = document.getElementById('btnSalvar');
+    btnSalvar.innerHTML = 'Salvar Alterações';
+    btnSalvar.className = 'btn btn-warning btn-lg fs-6 w-100 justify-content-center fw-bold text-dark border-0 shadow-sm';
     
-    window.scrollTo(0, 0); 
+    painelFormulario.show();
 };
 
-// Cancela a edição
-document.getElementById('btnCancelarEdicao').addEventListener('click', () => {
-    document.getElementById('formEpi').reset();
-    document.getElementById('editandoId').value = '';
-    document.getElementById('categoria').dispatchEvent(new Event('change'));
-    
-    document.getElementById('tituloForm').innerText = '➕ Cadastrar Material';
-    document.getElementById('tituloForm').classList.replace('bg-warning', 'bg-primary');
-    document.getElementById('tituloForm').classList.replace('text-dark', 'text-white');
-    document.getElementById('btnSalvar').innerText = 'Salvar Material';
-    document.getElementById('btnSalvar').classList.replace('btn-warning', 'btn-primary');
-    document.getElementById('btnCancelarEdicao').classList.add('d-none');
-});
-
-// Envia os dados (POST para Novo, PUT para Atualizar)
 document.getElementById('formEpi').addEventListener('submit', async (e) => {
     e.preventDefault(); 
     
@@ -140,7 +151,8 @@ document.getElementById('formEpi').addEventListener('submit', async (e) => {
         validade_ca: document.getElementById('validade').value,
         quantidade: document.getElementById('quantidade').value,
         peso: document.getElementById('peso').value,
-        comprimento: document.getElementById('comprimento').value
+        comprimento: document.getElementById('comprimento').value,
+        estoque_minimo: document.getElementById('estoque_minimo').value
     };
 
     try {
@@ -154,7 +166,7 @@ document.getElementById('formEpi').addEventListener('submit', async (e) => {
         });
 
         if (response.ok) {
-            document.getElementById('btnCancelarEdicao').click(); 
+            painelFormulario.hide(); 
             document.getElementById('barraPesquisa').value = ''; 
             carregarEpis(); 
         } else {
@@ -165,5 +177,4 @@ document.getElementById('formEpi').addEventListener('submit', async (e) => {
     }
 });
 
-// Inicia carregando a tabela
 carregarEpis();

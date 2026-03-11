@@ -4,77 +4,57 @@ const pool = require('./database');
 const path = require('path');
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Rota 1: Listar Materiais
 app.get('/api/epis', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM epis ORDER BY id DESC');
         res.json(result.rows);
     } catch (err) {
-        console.error(err);
         res.status(500).json({ error: 'Erro ao buscar dados do banco.' });
     }
 });
 
-// Rota 2: Cadastrar Novo Material (POST)
 app.post('/api/epis', async (req, res) => {
-    const { codigo_identificacao, nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento } = req.body;
+    // Adicionamos o estoque_minimo aqui
+    const { codigo_identificacao, nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, estoque_minimo } = req.body;
     try {
         const query = `
-            INSERT INTO epis (nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, codigo_identificacao) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
+            INSERT INTO epis (nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, codigo_identificacao, estoque_minimo) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
         `;
         const result = await pool.query(query, [
-            nome, 
-            categoria, 
-            numero_ca, 
-            validade_ca || null, 
-            quantidade, 
-            peso || null, 
-            comprimento || null, 
-            codigo_identificacao || null
+            nome, categoria, numero_ca, validade_ca || null, quantidade, 
+            peso || null, comprimento || null, codigo_identificacao || null, estoque_minimo || 0
         ]);
         res.json(result.rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Erro ao salvar no banco.' });
+        res.status(500).json({ error: 'Erro ao salvar.' });
     }
 });
 
-// Rota 3: Editar Material Existente (PUT)
 app.put('/api/epis/:id', async (req, res) => {
     const { id } = req.params;
-    const { codigo_identificacao, nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento } = req.body;
+    const { codigo_identificacao, nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, estoque_minimo } = req.body;
     try {
         const query = `
             UPDATE epis 
             SET nome = $1, categoria = $2, numero_ca = $3, validade_ca = $4, 
-                quantidade = $5, peso = $6, comprimento = $7, codigo_identificacao = $8
-            WHERE id = $9 RETURNING *
+                quantidade = $5, peso = $6, comprimento = $7, codigo_identificacao = $8, estoque_minimo = $9
+            WHERE id = $10 RETURNING *
         `;
         const result = await pool.query(query, [
-            nome, 
-            categoria, 
-            numero_ca, 
-            validade_ca || null, 
-            quantidade, 
-            peso || null, 
-            comprimento || null, 
-            codigo_identificacao || null, 
-            id
+            nome, categoria, numero_ca, validade_ca || null, quantidade, 
+            peso || null, comprimento || null, codigo_identificacao || null, estoque_minimo || 0, id
         ]);
         res.json(result.rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Erro ao atualizar no banco.' });
+        res.status(500).json({ error: 'Erro ao atualizar.' });
     }
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando! Acesse no navegador: http://localhost:${PORT}`);
+app.listen(3000, () => {
+    console.log('🚀 Servidor rodando em http://localhost:3000');
 });
