@@ -2,12 +2,14 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import Estoque from './pages/Estoque';
 import Movimentacoes from './pages/Movimentacoes';
+import Colaboradores from './pages/Colaboradores';
+import Relatorios from './pages/Relatorios'; // ⬅️ ADICIONADO: Importação da página de Relatórios
 
 const navItems = [
-  { to: '/',               icon: 'bi-box-seam',       label: 'Estoque Atual'  },
-  { to: '/movimentacoes',  icon: 'bi-arrow-left-right',label: 'Movimentações' },
-  { to: '/colaboradores',  icon: 'bi-people',          label: 'Colaboradores' },
-  { to: '/relatorios',     icon: 'bi-graph-up-arrow',  label: 'Relatórios'    },
+  { to: '/',               icon: 'bi-box-seam',         label: 'Estoque Atual'  },
+  { to: '/movimentacoes',  icon: 'bi-arrow-left-right', label: 'Movimentações' },
+  { to: '/colaboradores',  icon: 'bi-people',           label: 'Colaboradores' },
+  { to: '/relatorios',     icon: 'bi-graph-up-arrow',   label: 'Relatórios'    },
 ];
 
 const pageTitles = {
@@ -102,6 +104,8 @@ function Layout() {
           <Routes>
             <Route path="/" element={<Estoque />} />
             <Route path="/movimentacoes" element={<Movimentacoes />} />
+            <Route path="/colaboradores" element={<Colaboradores />} />
+            <Route path="/relatorios" element={<Relatorios />} /> {/* ⬅️ ADICIONADO: Rota da página de Relatórios */}
           </Routes>
         </div>
       </div>
