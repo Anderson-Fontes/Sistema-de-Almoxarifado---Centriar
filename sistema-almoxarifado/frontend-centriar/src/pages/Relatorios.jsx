@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 
+// Paleta de cores por categoria — consistente com o Estoque.jsx
+const categoriaCores = {
+    'EPI':        '#fbbf24',
+    'Consumível': '#60a5fa',
+    'Ferramenta': '#a78bfa',
+    'Gás':        '#f87171',
+    'Cobre':      '#34d399',
+    'Outros':     '#94a3b8',
+};
+
 export default function Relatorios() {
     const [materiais, setMateriais] = useState([]);
     const [colaboradores, setColaboradores] = useState([]);
@@ -11,18 +21,16 @@ export default function Relatorios() {
     useEffect(() => {
         const carregarDados = async () => {
             try {
-                // Tenta carregar tudo, incluindo as movimentações (que faremos na próxima etapa)
                 const [resMateriais, resColaboradores] = await Promise.all([
                     api.get('/epis').catch(() => ({ data: [] })),
                     api.get('/colaboradores').catch(() => ({ data: [] }))
                 ]);
-                
+
                 let dadosMovimentacoes = [];
                 try {
                     const resMov = await api.get('/movimentacoes');
                     dadosMovimentacoes = resMov.data;
-                } catch (e) {
-                    // Como a API de movimentações ainda não existe, criamos dados visuais de teste
+                } catch {
                     dadosMovimentacoes = [
                         { id: 1, colaborador_id: 1, epi_nome: 'Luva de Raspa', tipo: 'Saída', quantidade: 2, data_hora: new Date().toISOString(), status: 'Em Posse' },
                         { id: 2, colaborador_id: 1, epi_nome: 'Capacete de Obra', tipo: 'Devolução', quantidade: 1, data_hora: new Date(Date.now() - 86400000).toISOString(), status: 'Devolvido' },
@@ -31,258 +39,305 @@ export default function Relatorios() {
                 }
 
                 setMateriais(resMateriais.data);
-                setColaboradores(resColaboradores.data);
                 setMovimentacoes(dadosMovimentacoes);
-                
-                if (resColaboradores.data.length > 0) {
-                    setColaboradorSelecionado(resColaboradores.data[0].id.toString());
-                } else {
-                    // Se não houver colaboradores na BD para o teste visual
-                    setColaboradorSelecionado('1');
-                    setColaboradores([{ id: 1, nome: 'João Silva', setor: 'Manutenção' }, { id: 2, nome: 'Maria Santos', setor: 'Obras' }]);
-                }
-                
+
+                const cols = resColaboradores.data.length > 0
+                    ? resColaboradores.data
+                    : [{ id: 1, nome: 'João Silva', setor: 'Manutenção' }, { id: 2, nome: 'Maria Santos', setor: 'Obras' }];
+                setColaboradores(cols);
+                setColaboradorSelecionado(cols[0].id.toString());
+
                 setLoading(false);
-            } catch (error) {
-                console.error('Erro ao gerar relatórios:', error);
+            } catch {
                 setLoading(false);
             }
         };
         carregarDados();
     }, []);
 
-    // ─── CÁLCULOS E ESTATÍSTICAS ───
-    const totalItensDiferentes = materiais.length;
-    const unidadesTotais = materiais.reduce((acc, mat) => acc + Number(mat.quantidade), 0);
-    const itensEmAlerta = materiais.filter(m => m.quantidade <= (m.estoque_minimo || 0));
-    
-    // Calcula o consumo do mês atual
+    // ─── ESTATÍSTICAS ───
+    const totalItens      = materiais.length;
+    const unidadesTotais  = materiais.reduce((acc, m) => acc + Number(m.quantidade || 0), 0);
+    const itensEmAlerta   = materiais.filter(m => Number(m.quantidade || 0) <= Number(m.estoque_minimo || 0));
+
     const mesAtual = new Date().getMonth();
-    const consumoMes = movimentacoes.filter(m => {
-        const dataMov = new Date(m.data_hora);
-        return dataMov.getMonth() === mesAtual && (m.tipo === 'Saída' || m.tipo === 'Consumo');
-    }).reduce((acc, mov) => acc + Number(mov.quantidade), 0);
+    const consumoMes = movimentacoes
+        .filter(m => new Date(m.data_hora).getMonth() === mesAtual && (m.tipo === 'Saída' || m.tipo === 'Consumo'))
+        .reduce((acc, m) => acc + Number(m.quantidade || 0), 0);
 
-    // Dados do Colaborador Selecionado
-    const historicoColaborador = movimentacoes.filter(m => m.colaborador_id.toString() === colaboradorSelecionado);
-    const itensEmPosse = historicoColaborador.filter(m => m.status === 'Em Posse').length;
-
-    // Distribuição por Categorias
-    const categoriasCount = materiais.reduce((acc, mat) => {
-        acc[mat.categoria] = (acc[mat.categoria] || 0) + 1;
+    // Distribuição por categoria
+    const categoriasCount = materiais.reduce((acc, m) => {
+        acc[m.categoria] = (acc[m.categoria] || 0) + 1;
         return acc;
     }, {});
-
     const categoriasOrdenadas = Object.entries(categoriasCount)
         .sort((a, b) => b[1] - a[1])
         .map(([nome, count]) => ({
-            nome,
-            count,
-            percentual: totalItensDiferentes > 0 ? Math.round((count / totalItensDiferentes) * 100) : 0
+            nome, count,
+            percentual: totalItens > 0 ? Math.round((count / totalItens) * 100) : 0,
+            cor: categoriaCores[nome] || '#94a3b8',
         }));
 
-    const imprimirRelatorio = () => window.print();
+    // Histórico do colaborador selecionado
+    const historicoColaborador = movimentacoes.filter(
+        m => m.colaborador_id.toString() === colaboradorSelecionado
+    );
+    const itensEmPosse = historicoColaborador.filter(m => m.status === 'Em Posse').length;
+
+    const colaboradorAtual = colaboradores.find(c => c.id.toString() === colaboradorSelecionado);
+
+    const formatarData = (d) => {
+        if (!d) return '—';
+        return new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    };
+
+    const tipoBadge = {
+        'Saída':     { cls: 'badge-em-uso',    icon: 'bi-box-arrow-right' },
+        'Devolução': { cls: 'badge-devolvido', icon: 'bi-box-arrow-in-left' },
+        'Consumo':   { cls: 'badge-gas',       icon: 'bi-fire' },
+    };
 
     if (loading) {
-        return <div className="p-5 text-center text-muted fw-bold">A processar dados analíticos...</div>;
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', gap: 10, color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: 13 }}>A processar dados analíticos...</span>
+            </div>
+        );
     }
 
     return (
-        <div className="p-4">
-            {/* Cabeçalho */}
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h4 className="fw-bold text-dark mb-0">Visão Estratégica</h4>
-                    <span className="text-muted">Métricas, consumos e histórico detalhado</span>
-                </div>
-                <button className="btn btn-primary fw-bold shadow-sm rounded-3 px-4" onClick={imprimirRelatorio}>
-                    <i className="bi bi-printer-fill me-2"></i> Exportar Relatório
-                </button>
-            </div>
-
+        <div>
             {/* ─── KPI CARDS ─── */}
-            <div className="row g-4 mb-4">
-                <div className="col-xl-3 col-md-6">
-                    <div className="card bg-white border-0 shadow-sm rounded-4 h-100 p-3" style={{ borderLeft: '5px solid #6366f1' }}>
-                        <div className="d-flex align-items-center gap-3">
-                            <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style={{ width: '50px', height: '50px', fontSize: '1.5rem' }}>
-                                <i className="bi bi-boxes"></i>
-                            </div>
-                            <div>
-                                <div className="text-muted small fw-bold text-uppercase">Volume em Estoque</div>
-                                <div className="fs-3 fw-bolder text-dark">{unidadesTotais} <span className="fs-6 text-muted fw-normal">un.</span></div>
-                            </div>
-                        </div>
+            <div className="kpi-grid">
+                <div className="kpi-card">
+                    <div className="kpi-icon" style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>
+                        <i className="bi bi-boxes"></i>
                     </div>
+                    <div className="kpi-value">{unidadesTotais}</div>
+                    <div className="kpi-label">Unidades em Estoque</div>
                 </div>
-                
-                <div className="col-xl-3 col-md-6">
-                    <div className="card bg-white border-0 shadow-sm rounded-4 h-100 p-3" style={{ borderLeft: '5px solid #10b981' }}>
-                        <div className="d-flex align-items-center gap-3">
-                            <div className="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center" style={{ width: '50px', height: '50px', fontSize: '1.5rem' }}>
-                                <i className="bi bi-calendar2-check-fill"></i>
-                            </div>
-                            <div>
-                                <div className="text-muted small fw-bold text-uppercase">Gasto este Mês</div>
-                                <div className="fs-3 fw-bolder text-dark">{consumoMes} <span className="fs-6 text-muted fw-normal">itens</span></div>
-                            </div>
-                        </div>
+                <div className="kpi-card">
+                    <div className="kpi-icon" style={{ background: 'rgba(16,185,129,0.1)', color: '#34d399' }}>
+                        <i className="bi bi-calendar2-check-fill"></i>
                     </div>
+                    <div className="kpi-value">{consumoMes}</div>
+                    <div className="kpi-label">Itens Consumidos este Mês</div>
                 </div>
-
-                <div className="col-xl-3 col-md-6">
-                    <div className="card bg-white border-0 shadow-sm rounded-4 h-100 p-3" style={{ borderLeft: `5px solid ${itensEmAlerta.length > 0 ? '#ef4444' : '#10b981'}` }}>
-                        <div className="d-flex align-items-center gap-3">
-                            <div className="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center" style={{ width: '50px', height: '50px', fontSize: '1.5rem' }}>
-                                <i className="bi bi-cart-x-fill"></i>
-                            </div>
-                            <div>
-                                <div className="text-muted small fw-bold text-uppercase">Comprar Urgente</div>
-                                <div className="fs-3 fw-bolder text-danger">{itensEmAlerta.length} <span className="fs-6 text-muted fw-normal">SKUs</span></div>
-                            </div>
-                        </div>
+                <div className="kpi-card">
+                    <div className="kpi-icon" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
+                        <i className="bi bi-exclamation-triangle-fill"></i>
                     </div>
+                    <div className="kpi-value">{itensEmAlerta.length}</div>
+                    <div className="kpi-label">Itens Abaixo do Mínimo</div>
                 </div>
-
-                <div className="col-xl-3 col-md-6">
-                    <div className="card bg-white border-0 shadow-sm rounded-4 h-100 p-3" style={{ borderLeft: '5px solid #f59e0b' }}>
-                        <div className="d-flex align-items-center gap-3">
-                            <div className="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center" style={{ width: '50px', height: '50px', fontSize: '1.5rem' }}>
-                                <i className="bi bi-people-fill"></i>
-                            </div>
-                            <div>
-                                <div className="text-muted small fw-bold text-uppercase">Equipa Ativa</div>
-                                <div className="fs-3 fw-bolder text-dark">{colaboradores.length} <span className="fs-6 text-muted fw-normal">func.</span></div>
-                            </div>
-                        </div>
+                <div className="kpi-card">
+                    <div className="kpi-icon" style={{ background: 'rgba(245,158,11,0.1)', color: '#fbbf24' }}>
+                        <i className="bi bi-diagram-3-fill"></i>
                     </div>
+                    <div className="kpi-value">{totalItens}</div>
+                    <div className="kpi-label">Tipos de Material</div>
                 </div>
             </div>
 
-            <div className="row g-4 mb-4">
-                {/* ─── GRÁFICO DE BARRAS ─── */}
-                <div className="col-lg-7">
-                    <div className="card bg-white border-0 shadow-sm rounded-4 h-100 p-4">
-                        <h6 className="fw-bold text-dark mb-4"><i className="bi bi-bar-chart-fill text-primary me-2"></i>Distribuição por Categoria</h6>
-                        <div>
-                            {categoriasOrdenadas.map((cat, index) => (
-                                <div key={index} className="mb-4">
-                                    <div className="d-flex justify-content-between align-items-end mb-1">
-                                        <span className="fw-bold text-dark">{cat.nome}</span>
-                                        <span className="text-muted small fw-semibold">{cat.count} itens ({cat.percentual}%)</span>
-                                    </div>
-                                    <div className="progress bg-light" style={{ height: '12px', borderRadius: '10px' }}>
-                                        <div className="progress-bar progress-bar-striped progress-bar-animated bg-primary" style={{ width: `${cat.percentual}%`, borderRadius: '10px' }}></div>
-                                    </div>
-                                </div>
-                            ))}
-                            {categoriasOrdenadas.length === 0 && <div className="text-center text-muted py-4">Sem dados registados.</div>}
+            {/* ─── LINHA 1: Distribuição + Prioridade de Compra ─── */}
+            <div className="relatorio-grid" style={{ marginBottom: 14 }}>
+
+                {/* Distribuição por Categoria */}
+                <div className="panel">
+                    <div className="panel-header">
+                        <div className="panel-title">
+                            <i className="bi bi-bar-chart-fill"></i>
+                            Distribuição por Categoria
                         </div>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            {totalItens} tipos
+                        </span>
+                    </div>
+                    <div style={{ padding: '18px 20px' }}>
+                        {categoriasOrdenadas.length > 0 ? categoriasOrdenadas.map((cat, i) => (
+                            <div key={i} className="cat-progress-wrap">
+                                <div className="cat-progress-label">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                                        <div style={{
+                                            width: 8, height: 8, borderRadius: '50%',
+                                            background: cat.cor, flexShrink: 0,
+                                            boxShadow: `0 0 6px ${cat.cor}66`
+                                        }} />
+                                        <span className="cat-progress-name">{cat.nome}</span>
+                                    </div>
+                                    <span className="cat-progress-count">{cat.count} · {cat.percentual}%</span>
+                                </div>
+                                <div className="cat-progress-track">
+                                    <div className="cat-progress-fill" style={{ width: `${cat.percentual}%`, background: cat.cor }} />
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="empty-state" style={{ padding: '30px 0' }}>
+                                <div className="empty-state-title">Nenhum dado registado</div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* ─── PAINEL DE AÇÃO ─── */}
-                <div className="col-lg-5">
-                    <div className="card bg-white border border-danger border-opacity-25 shadow-sm rounded-4 h-100">
-                        <div className="bg-danger bg-opacity-10 px-4 py-3 rounded-top-4 border-bottom border-danger border-opacity-10">
-                            <h6 className="fw-bold text-danger mb-0"><i className="bi bi-exclamation-triangle-fill me-2"></i>Prioridade de Compra</h6>
+                {/* Prioridade de Compra */}
+                <div className="panel">
+                    <div className="panel-header">
+                        <div className="panel-title" style={{ color: '#fca5a5' }}>
+                            <i className="bi bi-exclamation-triangle-fill" style={{ color: '#f87171' }}></i>
+                            Prioridade de Compra
                         </div>
-                        <div className="p-0 table-responsive" style={{ maxHeight: '300px' }}>
-                            <table className="table table-hover align-middle mb-0">
-                                <thead className="bg-white sticky-top">
+                        <span style={{
+                            fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 700,
+                            background: 'rgba(239,68,68,0.1)', color: '#f87171',
+                            border: '1px solid rgba(239,68,68,0.2)'
+                        }}>
+                            {itensEmAlerta.length} itens
+                        </span>
+                    </div>
+                    <div style={{ overflowX: 'auto', maxHeight: 320, overflowY: 'auto' }}>
+                        {itensEmAlerta.length > 0 ? (
+                            <table className="data-table">
+                                <thead>
                                     <tr>
-                                        <th className="text-muted small ps-4">Material</th>
-                                        <th className="text-center text-muted small">Estoque</th>
-                                        <th className="text-center text-muted small pe-4">Mínimo</th>
+                                        <th>Material</th>
+                                        <th style={{ textAlign: 'center' }}>Atual</th>
+                                        <th style={{ textAlign: 'center' }}>Mínimo</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {itensEmAlerta.slice(0, 10).map(item => (
                                         <tr key={item.id}>
-                                            <td className="fw-bold text-dark ps-4">{item.nome}</td>
-                                            <td className="text-center"><span className="badge bg-danger text-white rounded-pill px-3 py-2">{item.quantidade}</span></td>
-                                            <td className="text-center text-muted fw-bold pe-4">{item.estoque_minimo || 0}</td>
-                                        </tr>
-                                    ))}
-                                    {itensEmAlerta.length === 0 && (
-                                        <tr>
-                                            <td colSpan="3" className="text-center py-5 text-success fw-bold">
-                                                <i className="bi bi-check-circle-fill fs-2 d-block mb-2"></i>
-                                                Estoque perfeitamente abastecido!
+                                            <td>
+                                                <div className="cell-main" style={{ fontSize: 13 }}>{item.nome}</div>
+                                            </td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <span className="badge-pill badge-alerta">
+                                                    {item.quantidade}
+                                                </span>
+                                            </td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <span className="cell-mono" style={{ fontSize: 12 }}>
+                                                    {item.estoque_minimo || 0}
+                                                </span>
                                             </td>
                                         </tr>
-                                    )}
+                                    ))}
                                 </tbody>
                             </table>
-                        </div>
+                        ) : (
+                            <div className="empty-state">
+                                <div className="empty-state-icon" style={{ background: 'rgba(16,185,129,0.1)', color: '#34d399', border: '1px solid rgba(16,185,129,0.2)' }}>
+                                    <i className="bi bi-check-circle-fill"></i>
+                                </div>
+                                <div className="empty-state-title" style={{ color: '#34d399' }}>Estoque abastecido!</div>
+                                <div className="empty-state-text">Nenhum item abaixo do mínimo</div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* ─── FICHA DE COLABORADOR (HISTÓRICO) ─── */}
-            <div className="card bg-white border-0 shadow-sm rounded-4 p-4">
-                <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                    <h6 className="fw-bold text-dark mb-0"><i className="bi bi-person-lines-fill text-primary me-2"></i>Histórico por Colaborador</h6>
-                    
-                    <div className="d-flex align-items-center gap-3 bg-light p-2 rounded-3 border">
-                        <label className="text-muted small fw-bold text-nowrap ms-2">Selecionar Colaborador:</label>
-                        <select 
-                            className="form-select border-0 bg-white shadow-sm fw-bold text-dark" 
-                            style={{ minWidth: '250px' }}
+            {/* ─── LINHA 2: Ficha de Colaborador ─── */}
+            <div className="panel">
+                <div className="panel-header">
+                    <div className="panel-title">
+                        <i className="bi bi-person-lines-fill"></i>
+                        Ficha por Colaborador
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {colaboradorAtual && itensEmPosse > 0 && (
+                            <span className="badge-pill badge-em-uso" style={{ fontSize: 11 }}>
+                                <i className="bi bi-exclamation-circle-fill" style={{ fontSize: 9 }}></i>
+                                {itensEmPosse} em posse
+                            </span>
+                        )}
+                        <select
+                            className="form-select-custom"
+                            style={{ width: 'auto', fontSize: 13, padding: '7px 36px 7px 12px' }}
                             value={colaboradorSelecionado}
-                            onChange={(e) => setColaboradorSelecionado(e.target.value)}
+                            onChange={e => setColaboradorSelecionado(e.target.value)}
                         >
                             {colaboradores.map(c => (
-                                <option key={c.id} value={c.id}>{c.nome} - {c.setor}</option>
+                                <option key={c.id} value={c.id}>{c.nome} — {c.setor}</option>
                             ))}
                         </select>
+                        <button className="btn-ghost" style={{ fontSize: 12 }} onClick={() => window.print()}>
+                            <i className="bi bi-printer"></i>
+                            Imprimir
+                        </button>
                     </div>
                 </div>
 
-                <div className="d-flex gap-4 mb-4">
-                    <div className="bg-warning bg-opacity-10 text-warning-emphasis border border-warning-subtle px-4 py-3 rounded-3">
-                        <div className="small fw-bold text-uppercase mb-1">Materiais em Posse (Pendentes)</div>
-                        <div className="fs-4 fw-bold">{itensEmPosse} itens</div>
+                {/* Chips de resumo */}
+                {colaboradorAtual && (
+                    <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <div className="colaborador-ficha-chip" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)' }}>
+                            <i className="bi bi-box-seam-fill" style={{ color: '#fbbf24', fontSize: 13 }}></i>
+                            <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Em Posse</span>
+                            <span style={{ color: '#fbbf24', fontSize: 16, fontWeight: 800, letterSpacing: '-0.5px', marginLeft: 4 }}>{itensEmPosse}</span>
+                        </div>
+                        <div className="colaborador-ficha-chip">
+                            <i className="bi bi-clock-history" style={{ color: 'var(--primary-light)', fontSize: 13 }}></i>
+                            <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Total de Registos</span>
+                            <span style={{ color: 'var(--text-primary)', fontSize: 16, fontWeight: 800, letterSpacing: '-0.5px', marginLeft: 4 }}>{historicoColaborador.length}</span>
+                        </div>
+                        <div className="colaborador-ficha-chip">
+                            <i className="bi bi-building" style={{ color: 'var(--text-secondary)', fontSize: 13 }}></i>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{colaboradorAtual.setor}</span>
+                        </div>
                     </div>
-                    <div className="bg-light border text-muted px-4 py-3 rounded-3">
-                        <div className="small fw-bold text-uppercase mb-1">Total de Registos na Ficha</div>
-                        <div className="fs-4 fw-bold">{historicoColaborador.length} movimentos</div>
-                    </div>
-                </div>
+                )}
 
-                <div className="table-responsive border rounded-3">
-                    <table className="table table-hover align-middle mb-0">
-                        <thead className="bg-light">
+                {/* Tabela de histórico */}
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="data-table">
+                        <thead>
                             <tr>
-                                <th className="text-muted small ps-4">Data e Hora</th>
-                                <th className="text-muted small">Material / EPI</th>
-                                <th className="text-muted small text-center">Operação</th>
-                                <th className="text-muted small text-center">Qtd</th>
-                                <th className="text-muted small text-center pe-4">Estado Atual</th>
+                                <th>Data e Hora</th>
+                                <th>Material / EPI</th>
+                                <th style={{ textAlign: 'center' }}>Operação</th>
+                                <th style={{ textAlign: 'center' }}>Qtd</th>
+                                <th style={{ textAlign: 'center' }}>Estado</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {historicoColaborador.map((mov, index) => (
-                                <tr key={index}>
-                                    <td className="text-dark fw-medium ps-4">{new Date(mov.data_hora).toLocaleString('pt-PT')}</td>
-                                    <td className="fw-bold text-dark">{mov.epi_nome}</td>
-                                    <td className="text-center">
-                                        <span className={`badge bg-opacity-10 text-dark border px-3 py-1 rounded-pill ${mov.tipo === 'Saída' ? 'bg-warning border-warning' : mov.tipo === 'Devolução' ? 'bg-success border-success' : 'bg-info border-info'}`}>
-                                            {mov.tipo}
-                                        </span>
-                                    </td>
-                                    <td className="text-center fw-bold text-dark">{mov.quantidade}</td>
-                                    <td className="text-center pe-4">
-                                        <span className={`fw-bold small ${mov.status === 'Em Posse' ? 'text-warning' : mov.status === 'Devolvido' ? 'text-success' : 'text-muted'}`}>
-                                            {mov.status === 'Em Posse' ? <><i className="bi bi-exclamation-circle-fill me-1"></i> Em Posse</> : mov.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
+                            {historicoColaborador.map((mov, i) => {
+                                const badge = tipoBadge[mov.tipo] || { cls: 'badge-outros', icon: 'bi-question' };
+                                const statusColor = mov.status === 'Em Posse' ? '#fbbf24' : mov.status === 'Devolvido' ? '#34d399' : 'var(--text-muted)';
+                                return (
+                                    <tr key={i}>
+                                        <td>
+                                            <span className="cell-mono" style={{ fontSize: 12 }}>{formatarData(mov.data_hora)}</span>
+                                        </td>
+                                        <td>
+                                            <div className="cell-main" style={{ fontSize: 13 }}>{mov.epi_nome}</div>
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <span className={`badge-pill ${badge.cls}`}>
+                                                <i className={`bi ${badge.icon}`} style={{ fontSize: 9 }}></i>
+                                                {mov.tipo}
+                                            </span>
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <span className="cell-mono">{mov.quantidade}</span>
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: statusColor }}>
+                                                {mov.status === 'Em Posse' && <i className="bi bi-exclamation-circle-fill" style={{ marginRight: 4, fontSize: 10 }}></i>}
+                                                {mov.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                             {historicoColaborador.length === 0 && (
                                 <tr>
-                                    <td colSpan="5" className="text-center py-4 text-muted">
-                                        Nenhum registo de movimentação para este colaborador.
+                                    <td colSpan={5}>
+                                        <div className="empty-state">
+                                            <div className="empty-state-icon"><i className="bi bi-person-x"></i></div>
+                                            <div className="empty-state-title">Nenhum registo</div>
+                                            <div className="empty-state-text">Este colaborador não possui movimentações registadas</div>
+                                        </div>
                                     </td>
                                 </tr>
                             )}
