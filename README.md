@@ -17,9 +17,7 @@
 <p align="center">
   <a href="#-sobre-o-projeto">Sobre</a> •
   <a href="#-funcionalidades-principais">Funcionalidades</a> •
-  <a href="#-tecnologias-utilizadas">Tecnologias</a> •
-  <a href="#-como-executar-o-projeto">Como Executar</a> •
-  <a href="#-estrutura-do-banco-de-dados">Banco de Dados</a>
+  <a href="#-tecnologias-utilizadas">Tecnologias</a> 
 </p>
 
 <hr>
