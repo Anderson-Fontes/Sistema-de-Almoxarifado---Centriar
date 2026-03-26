@@ -227,7 +227,6 @@ Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o 
  ┃ ┗ 📄 database.js         # Configuração e conexão com o PostgreSQL
  ┃
  ┣ 📂 frontend
- ┃ ┣ 📂 components         # Componentes reutilizáveis da interface
  ┃ ┣ 📂 pages              # Páginas da aplicação
  ┃ ┣ 📂 services           # Camada de comunicação com a API
  ┃ ┗ 📄 App.jsx            # Componente raiz da aplicação React
