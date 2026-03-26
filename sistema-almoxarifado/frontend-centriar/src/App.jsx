@@ -3,7 +3,10 @@ import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router
 import Estoque from './pages/Estoque';
 import Movimentacoes from './pages/Movimentacoes';
 import Colaboradores from './pages/Colaboradores';
-import Relatorios from './pages/Relatorios'; // ⬅️ ADICIONADO: Importação da página de Relatórios
+import Relatorios from './pages/Relatorios';
+
+// Importação da logo que você salvou na pasta assets
+import logoCentriar from './assets/logo_sem_fundo.png'; 
 
 const navItems = [
   { to: '/',               icon: 'bi-box-seam',         label: 'Estoque Atual'  },
@@ -28,17 +31,26 @@ function Layout() {
     <div className="app-container">
       {/* ─── SIDEBAR ─── */}
       <div className="sidebar">
-        {/* Logo */}
-        <div className="sidebar-logo">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div className="logo-mark">
-              <i className="bi bi-layers-half"></i>
-            </div>
-            <div>
-              <div className="logo-text">Centriar</div>
-              <div className="logo-sub">ERP · Almoxarifado</div>
-            </div>
-          </div>
+        
+        {/* ─── LOGO OFICIAL (Tamanho Ajustado) ─── */}
+        <div className="sidebar-logo" style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          // ⬆️ AUMENTADO: Adicionado um pouco mais de padding para equilibrar
+          padding: '20px 10px', 
+          borderBottom: '1px solid rgba(255,255,255,0.05)' 
+        }}>
+          <img 
+            src={logoCentriar} 
+            alt="Centriar Ar Condicionado" 
+            style={{ 
+              maxWidth: '100%', 
+              // ⬇️ DIMINUÍDO: O tamanho máximo da logo agora é 90px (era 110px)
+              maxHeight: '90px', 
+              objectFit: 'contain' 
+            }} 
+          />
         </div>
 
         {/* Nav */}
@@ -105,7 +117,7 @@ function Layout() {
             <Route path="/" element={<Estoque />} />
             <Route path="/movimentacoes" element={<Movimentacoes />} />
             <Route path="/colaboradores" element={<Colaboradores />} />
-            <Route path="/relatorios" element={<Relatorios />} /> {/* ⬅️ ADICIONADO: Rota da página de Relatórios */}
+            <Route path="/relatorios" element={<Relatorios />} />
           </Routes>
         </div>
       </div>

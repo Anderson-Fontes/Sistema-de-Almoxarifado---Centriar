@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 
-// Paleta de cores por categoria — consistente com o Estoque.jsx
-const categoriaCores = {
-    'EPI':        '#fbbf24',
-    'Consumível': '#60a5fa',
-    'Ferramenta': '#a78bfa',
-    'Gás':        '#f87171',
-    'Cobre':      '#34d399',
-    'Outros':     '#94a3b8',
+const categoriaColors = {
+    'EPI':        { fill: '#fbbf24', bg: 'rgba(245,158,11,0.12)'  },
+    'Consumível': { fill: '#60a5fa', bg: 'rgba(59,130,246,0.12)'  },
+    'Ferramenta': { fill: '#a78bfa', bg: 'rgba(139,92,246,0.12)'  },
+    'Gás':        { fill: '#f87171', bg: 'rgba(239,68,68,0.12)'   },
+    'Cobre':      { fill: '#34d399', bg: 'rgba(16,185,129,0.12)'  },
+    'Outros':     { fill: '#94a3b8', bg: 'rgba(148,163,184,0.08)' },
 };
 
 export default function Relatorios() {
@@ -21,86 +20,67 @@ export default function Relatorios() {
     useEffect(() => {
         const carregarDados = async () => {
             try {
-                const [resMateriais, resColaboradores] = await Promise.all([
-                    api.get('/epis').catch(() => ({ data: [] })),
-                    api.get('/colaboradores').catch(() => ({ data: [] }))
+                const [resMat, resColab, resMov] = await Promise.all([
+                    api.get('/epis'),
+                    api.get('/colaboradores'),
+                    api.get('/movimentacoes')
                 ]);
-
-                let dadosMovimentacoes = [];
-                try {
-                    const resMov = await api.get('/movimentacoes');
-                    dadosMovimentacoes = resMov.data;
-                } catch {
-                    dadosMovimentacoes = [
-                        { id: 1, colaborador_id: 1, epi_nome: 'Luva de Raspa', tipo: 'Saída', quantidade: 2, data_hora: new Date().toISOString(), status: 'Em Posse' },
-                        { id: 2, colaborador_id: 1, epi_nome: 'Capacete de Obra', tipo: 'Devolução', quantidade: 1, data_hora: new Date(Date.now() - 86400000).toISOString(), status: 'Devolvido' },
-                        { id: 3, colaborador_id: 2, epi_nome: 'Gás R410A', tipo: 'Consumo', quantidade: 1, data_hora: new Date().toISOString(), status: 'Consumido' }
-                    ];
+                setMateriais(resMat.data);
+                setColaboradores(resColab.data);
+                setMovimentacoes(resMov.data);
+                if (resColab.data.length > 0) {
+                    setColaboradorSelecionado(resColab.data[0].id.toString());
                 }
-
-                setMateriais(resMateriais.data);
-                setMovimentacoes(dadosMovimentacoes);
-
-                const cols = resColaboradores.data.length > 0
-                    ? resColaboradores.data
-                    : [{ id: 1, nome: 'João Silva', setor: 'Manutenção' }, { id: 2, nome: 'Maria Santos', setor: 'Obras' }];
-                setColaboradores(cols);
-                setColaboradorSelecionado(cols[0].id.toString());
-
                 setLoading(false);
-            } catch {
+            } catch (error) {
+                console.error('Erro ao gerar relatórios:', error);
                 setLoading(false);
             }
         };
         carregarDados();
     }, []);
 
-    // ─── ESTATÍSTICAS ───
-    const totalItens      = materiais.length;
-    const unidadesTotais  = materiais.reduce((acc, m) => acc + Number(m.quantidade || 0), 0);
-    const itensEmAlerta   = materiais.filter(m => Number(m.quantidade || 0) <= Number(m.estoque_minimo || 0));
+    // ─── CÁLCULOS ───
+    const totalItensDiferentes = materiais.length;
+    const unidadesTotais = materiais.reduce((acc, mat) => acc + Number(mat.quantidade), 0);
+
+    const itensEmAlerta = materiais.filter(m => {
+        if (m.categoria === 'Gás' || m.categoria === 'Cobre')
+            return parseFloat(m.peso_minimo || 0) > 0 && parseFloat(m.peso || 0) <= parseFloat(m.peso_minimo || 0);
+        return parseInt(m.quantidade || 0) <= parseInt(m.estoque_minimo || 0);
+    });
 
     const mesAtual = new Date().getMonth();
     const consumoMes = movimentacoes
-        .filter(m => new Date(m.data_hora).getMonth() === mesAtual && (m.tipo === 'Saída' || m.tipo === 'Consumo'))
-        .reduce((acc, m) => acc + Number(m.quantidade || 0), 0);
+        .filter(m => new Date(m.data_retirada).getMonth() === mesAtual)
+        .reduce((acc, mov) => acc + Number(mov.quantidade_retirada), 0);
 
-    // Distribuição por categoria
-    const categoriasCount = materiais.reduce((acc, m) => {
-        acc[m.categoria] = (acc[m.categoria] || 0) + 1;
+    const historicoColaborador = movimentacoes.filter(
+        m => m.colaborador_id?.toString() === colaboradorSelecionado
+    );
+    const itensEmPosse = historicoColaborador.filter(m => m.status === 'EM_USO').length;
+
+    const categoriasCount = materiais.reduce((acc, mat) => {
+        acc[mat.categoria] = (acc[mat.categoria] || 0) + 1;
         return acc;
     }, {});
+
     const categoriasOrdenadas = Object.entries(categoriasCount)
         .sort((a, b) => b[1] - a[1])
         .map(([nome, count]) => ({
-            nome, count,
-            percentual: totalItens > 0 ? Math.round((count / totalItens) * 100) : 0,
-            cor: categoriaCores[nome] || '#94a3b8',
+            nome,
+            count,
+            percentual: totalItensDiferentes > 0 ? Math.round((count / totalItensDiferentes) * 100) : 0
         }));
 
-    // Histórico do colaborador selecionado
-    const historicoColaborador = movimentacoes.filter(
-        m => m.colaborador_id.toString() === colaboradorSelecionado
-    );
-    const itensEmPosse = historicoColaborador.filter(m => m.status === 'Em Posse').length;
-
-    const colaboradorAtual = colaboradores.find(c => c.id.toString() === colaboradorSelecionado);
-
-    const formatarData = (d) => {
-        if (!d) return '—';
-        return new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    };
-
-    const tipoBadge = {
-        'Saída':     { cls: 'badge-em-uso',    icon: 'bi-box-arrow-right' },
-        'Devolução': { cls: 'badge-devolvido', icon: 'bi-box-arrow-in-left' },
-        'Consumo':   { cls: 'badge-gas',       icon: 'bi-fire' },
-    };
+    const formatarData = (d) =>
+        d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
 
     if (loading) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', gap: 10, color: 'var(--text-muted)' }}>
-                <span style={{ fontSize: 13 }}>A processar dados analíticos...</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 12, color: 'var(--text-muted)', fontSize: 14 }}>
+                <i className="bi bi-arrow-repeat" style={{ fontSize: 20, animation: 'spin 1s linear infinite' }}></i>
+                A processar dados analíticos...
             </div>
         );
     }
@@ -108,38 +88,43 @@ export default function Relatorios() {
     return (
         <div>
             {/* ─── KPI CARDS ─── */}
-            <div className="kpi-grid">
+            <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 <div className="kpi-card">
                     <div className="kpi-icon" style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>
                         <i className="bi bi-boxes"></i>
                     </div>
                     <div className="kpi-value">{unidadesTotais}</div>
-                    <div className="kpi-label">Unidades em Estoque</div>
+                    <div className="kpi-label">Volume em Estoque</div>
                 </div>
+
                 <div className="kpi-card">
                     <div className="kpi-icon" style={{ background: 'rgba(16,185,129,0.1)', color: '#34d399' }}>
                         <i className="bi bi-calendar2-check-fill"></i>
                     </div>
                     <div className="kpi-value">{consumoMes}</div>
-                    <div className="kpi-label">Itens Consumidos este Mês</div>
+                    <div className="kpi-label">Movimentado no Mês</div>
                 </div>
+
                 <div className="kpi-card">
                     <div className="kpi-icon" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
-                        <i className="bi bi-exclamation-triangle-fill"></i>
+                        <i className="bi bi-cart-x-fill"></i>
                     </div>
-                    <div className="kpi-value">{itensEmAlerta.length}</div>
-                    <div className="kpi-label">Itens Abaixo do Mínimo</div>
+                    <div className="kpi-value" style={{ color: itensEmAlerta.length > 0 ? '#f87171' : 'var(--text-primary)' }}>
+                        {itensEmAlerta.length}
+                    </div>
+                    <div className="kpi-label">Comprar Urgente</div>
                 </div>
+
                 <div className="kpi-card">
                     <div className="kpi-icon" style={{ background: 'rgba(245,158,11,0.1)', color: '#fbbf24' }}>
-                        <i className="bi bi-diagram-3-fill"></i>
+                        <i className="bi bi-grid-3x3-gap-fill"></i>
                     </div>
-                    <div className="kpi-value">{totalItens}</div>
-                    <div className="kpi-label">Tipos de Material</div>
+                    <div className="kpi-value">{totalItensDiferentes}</div>
+                    <div className="kpi-label">SKUs Cadastrados</div>
                 </div>
             </div>
 
-            {/* ─── LINHA 1: Distribuição + Prioridade de Compra ─── */}
+            {/* ─── LINHA 2: CATEGORIAS + ALERTA DE COMPRA ─── */}
             <div className="relatorio-grid" style={{ marginBottom: 14 }}>
 
                 {/* Distribuição por Categoria */}
@@ -149,111 +134,99 @@ export default function Relatorios() {
                             <i className="bi bi-bar-chart-fill"></i>
                             Distribuição por Categoria
                         </div>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                            {totalItens} tipos
-                        </span>
                     </div>
                     <div style={{ padding: '18px 20px' }}>
-                        {categoriasOrdenadas.length > 0 ? categoriasOrdenadas.map((cat, i) => (
-                            <div key={i} className="cat-progress-wrap">
-                                <div className="cat-progress-label">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                                        <div style={{
-                                            width: 8, height: 8, borderRadius: '50%',
-                                            background: cat.cor, flexShrink: 0,
-                                            boxShadow: `0 0 6px ${cat.cor}66`
-                                        }} />
+                        {categoriasOrdenadas.length === 0 ? (
+                            <div className="empty-state">
+                                <div className="empty-state-icon"><i className="bi bi-bar-chart"></i></div>
+                                <div className="empty-state-title">Sem dados registrados</div>
+                            </div>
+                        ) : categoriasOrdenadas.map((cat, i) => {
+                            const cor = categoriaColors[cat.nome] || categoriaColors['Outros'];
+                            return (
+                                <div key={i} className="cat-progress-wrap">
+                                    <div className="cat-progress-label">
                                         <span className="cat-progress-name">{cat.nome}</span>
+                                        <span className="cat-progress-count">{cat.count} itens · {cat.percentual}%</span>
                                     </div>
-                                    <span className="cat-progress-count">{cat.count} · {cat.percentual}%</span>
+                                    <div className="cat-progress-track">
+                                        <div
+                                            className="cat-progress-fill"
+                                            style={{ width: `${cat.percentual}%`, background: cor.fill }}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="cat-progress-track">
-                                    <div className="cat-progress-fill" style={{ width: `${cat.percentual}%`, background: cat.cor }} />
-                                </div>
-                            </div>
-                        )) : (
-                            <div className="empty-state" style={{ padding: '30px 0' }}>
-                                <div className="empty-state-title">Nenhum dado registado</div>
-                            </div>
-                        )}
+                            );
+                        })}
                     </div>
                 </div>
 
                 {/* Prioridade de Compra */}
-                <div className="panel">
-                    <div className="panel-header">
+                <div className="panel" style={{ borderColor: 'rgba(239,68,68,0.18)' }}>
+                    <div className="panel-header" style={{ background: 'rgba(239,68,68,0.05)', borderBottomColor: 'rgba(239,68,68,0.1)' }}>
                         <div className="panel-title" style={{ color: '#fca5a5' }}>
                             <i className="bi bi-exclamation-triangle-fill" style={{ color: '#f87171' }}></i>
                             Prioridade de Compra
                         </div>
-                        <span style={{
-                            fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 700,
-                            background: 'rgba(239,68,68,0.1)', color: '#f87171',
-                            border: '1px solid rgba(239,68,68,0.2)'
-                        }}>
-                            {itensEmAlerta.length} itens
-                        </span>
+                        {itensEmAlerta.length > 0 && (
+                            <span className="badge-pill badge-gas">{itensEmAlerta.length} SKUs</span>
+                        )}
                     </div>
-                    <div style={{ overflowX: 'auto', maxHeight: 320, overflowY: 'auto' }}>
-                        {itensEmAlerta.length > 0 ? (
+                    <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+                        {itensEmAlerta.length === 0 ? (
+                            <div className="empty-state">
+                                <div className="empty-state-icon" style={{ background: 'rgba(16,185,129,0.1)', color: '#34d399' }}>
+                                    <i className="bi bi-check-circle-fill"></i>
+                                </div>
+                                <div className="empty-state-title" style={{ color: '#34d399' }}>Estoque abastecido!</div>
+                                <div className="empty-state-text">Todos os itens estão acima do mínimo</div>
+                            </div>
+                        ) : (
                             <table className="data-table">
                                 <thead>
                                     <tr>
                                         <th>Material</th>
-                                        <th style={{ textAlign: 'center' }}>Atual</th>
+                                        <th style={{ textAlign: 'center' }}>Estoque</th>
                                         <th style={{ textAlign: 'center' }}>Mínimo</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {itensEmAlerta.slice(0, 10).map(item => (
                                         <tr key={item.id}>
-                                            <td>
-                                                <div className="cell-main" style={{ fontSize: 13 }}>{item.nome}</div>
-                                            </td>
+                                            <td><div className="cell-main">{item.nome}</div></td>
                                             <td style={{ textAlign: 'center' }}>
-                                                <span className="badge-pill badge-alerta">
-                                                    {item.quantidade}
+                                                <span className="badge-pill badge-gas">
+                                                    <i className="bi bi-exclamation-circle-fill" style={{ fontSize: 9 }}></i>
+                                                    {item.categoria === 'Gás' || item.categoria === 'Cobre'
+                                                        ? `${item.peso || 0}kg`
+                                                        : `${item.quantidade} un`}
                                                 </span>
                                             </td>
                                             <td style={{ textAlign: 'center' }}>
-                                                <span className="cell-mono" style={{ fontSize: 12 }}>
-                                                    {item.estoque_minimo || 0}
+                                                <span className="cell-mono">
+                                                    {item.estoque_minimo || item.peso_minimo || 0}
                                                 </span>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                        ) : (
-                            <div className="empty-state">
-                                <div className="empty-state-icon" style={{ background: 'rgba(16,185,129,0.1)', color: '#34d399', border: '1px solid rgba(16,185,129,0.2)' }}>
-                                    <i className="bi bi-check-circle-fill"></i>
-                                </div>
-                                <div className="empty-state-title" style={{ color: '#34d399' }}>Estoque abastecido!</div>
-                                <div className="empty-state-text">Nenhum item abaixo do mínimo</div>
-                            </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* ─── LINHA 2: Ficha de Colaborador ─── */}
+            {/* ─── FICHA DO COLABORADOR ─── */}
             <div className="panel">
                 <div className="panel-header">
                     <div className="panel-title">
                         <i className="bi bi-person-lines-fill"></i>
-                        Ficha por Colaborador
+                        Histórico por Colaborador
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        {colaboradorAtual && itensEmPosse > 0 && (
-                            <span className="badge-pill badge-em-uso" style={{ fontSize: 11 }}>
-                                <i className="bi bi-exclamation-circle-fill" style={{ fontSize: 9 }}></i>
-                                {itensEmPosse} em posse
-                            </span>
-                        )}
                         <select
                             className="form-select-custom"
-                            style={{ width: 'auto', fontSize: 13, padding: '7px 36px 7px 12px' }}
+                            style={{ width: 'auto', minWidth: 240, fontSize: 12.5, padding: '7px 36px 7px 12px' }}
                             value={colaboradorSelecionado}
                             onChange={e => setColaboradorSelecionado(e.target.value)}
                         >
@@ -261,82 +234,77 @@ export default function Relatorios() {
                                 <option key={c.id} value={c.id}>{c.nome} — {c.setor}</option>
                             ))}
                         </select>
-                        <button className="btn-ghost" style={{ fontSize: 12 }} onClick={() => window.print()}>
-                            <i className="bi bi-printer"></i>
+                        <button className="btn-ghost" onClick={() => window.print()}>
+                            <i className="bi bi-printer-fill"></i>
                             Imprimir
                         </button>
                     </div>
                 </div>
 
-                {/* Chips de resumo */}
-                {colaboradorAtual && (
-                    <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        <div className="colaborador-ficha-chip" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)' }}>
-                            <i className="bi bi-box-seam-fill" style={{ color: '#fbbf24', fontSize: 13 }}></i>
-                            <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Em Posse</span>
-                            <span style={{ color: '#fbbf24', fontSize: 16, fontWeight: 800, letterSpacing: '-0.5px', marginLeft: 4 }}>{itensEmPosse}</span>
-                        </div>
-                        <div className="colaborador-ficha-chip">
-                            <i className="bi bi-clock-history" style={{ color: 'var(--primary-light)', fontSize: 13 }}></i>
-                            <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Total de Registos</span>
-                            <span style={{ color: 'var(--text-primary)', fontSize: 16, fontWeight: 800, letterSpacing: '-0.5px', marginLeft: 4 }}>{historicoColaborador.length}</span>
-                        </div>
-                        <div className="colaborador-ficha-chip">
-                            <i className="bi bi-building" style={{ color: 'var(--text-secondary)', fontSize: 13 }}></i>
-                            <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{colaboradorAtual.setor}</span>
+                {/* Mini KPIs do colaborador */}
+                <div style={{ display: 'flex', gap: 10, padding: '14px 18px', borderBottom: '1px solid var(--border)', background: 'var(--surface-1)' }}>
+                    <div className="colaborador-ficha-chip" style={{ borderColor: 'rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.05)' }}>
+                        <i className="bi bi-person-walking" style={{ color: '#fbbf24', fontSize: 14 }}></i>
+                        <div>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Em Posse</div>
+                            <div style={{ fontSize: 17, fontWeight: 800, color: '#fbbf24', lineHeight: 1.2 }}>{itensEmPosse}</div>
                         </div>
                     </div>
-                )}
+                    <div className="colaborador-ficha-chip">
+                        <i className="bi bi-journal-text" style={{ color: 'var(--primary-light)', fontSize: 14 }}></i>
+                        <div>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Total de Registros</div>
+                            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{historicoColaborador.length}</div>
+                        </div>
+                    </div>
+                </div>
 
-                {/* Tabela de histórico */}
+                {/* Tabela */}
                 <div style={{ overflowX: 'auto' }}>
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>Data e Hora</th>
-                                <th>Material / EPI</th>
-                                <th style={{ textAlign: 'center' }}>Operação</th>
-                                <th style={{ textAlign: 'center' }}>Qtd</th>
-                                <th style={{ textAlign: 'center' }}>Estado</th>
+                                <th>Data Retirada</th>
+                                <th>Material / Ferramenta</th>
+                                <th style={{ textAlign: 'center' }}>Qtd / Peso</th>
+                                <th style={{ textAlign: 'center' }}>Data Devolução</th>
+                                <th style={{ textAlign: 'center' }}>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {historicoColaborador.map((mov, i) => {
-                                const badge = tipoBadge[mov.tipo] || { cls: 'badge-outros', icon: 'bi-question' };
-                                const statusColor = mov.status === 'Em Posse' ? '#fbbf24' : mov.status === 'Devolvido' ? '#34d399' : 'var(--text-muted)';
-                                return (
-                                    <tr key={i}>
-                                        <td>
-                                            <span className="cell-mono" style={{ fontSize: 12 }}>{formatarData(mov.data_hora)}</span>
-                                        </td>
-                                        <td>
-                                            <div className="cell-main" style={{ fontSize: 13 }}>{mov.epi_nome}</div>
-                                        </td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <span className={`badge-pill ${badge.cls}`}>
-                                                <i className={`bi ${badge.icon}`} style={{ fontSize: 9 }}></i>
-                                                {mov.tipo}
-                                            </span>
-                                        </td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <span className="cell-mono">{mov.quantidade}</span>
-                                        </td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <span style={{ fontSize: 12, fontWeight: 700, color: statusColor }}>
-                                                {mov.status === 'Em Posse' && <i className="bi bi-exclamation-circle-fill" style={{ marginRight: 4, fontSize: 10 }}></i>}
-                                                {mov.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                            {historicoColaborador.map((mov, i) => (
+                                <tr key={i}>
+                                    <td>
+                                        <span className="cell-mono">{formatarData(mov.data_retirada)}</span>
+                                    </td>
+                                    <td>
+                                        <div className="cell-main">{mov.material_nome_atual || mov.epi_nome || 'Material Excluído'}</div>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <span className="cell-mono">
+                                            {mov.quantidade_retirada}{mov.medida_inicial ? ` (${mov.medida_inicial}kg)` : ''}
+                                        </span>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>
+                                            {mov.data_devolucao ? formatarData(mov.data_devolucao) : <span style={{ opacity: 0.3 }}>—</span>}
+                                        </span>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <span className={`badge-pill ${mov.status === 'EM_USO' ? 'badge-epi' : 'badge-cobre'}`}>
+                                            <i className={`bi ${mov.status === 'EM_USO' ? 'bi-hourglass-split' : 'bi-check-circle-fill'}`} style={{ fontSize: 9 }}></i>
+                                            {mov.status === 'EM_USO' ? 'Em Uso' : 'Devolvido'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
                             {historicoColaborador.length === 0 && (
                                 <tr>
                                     <td colSpan={5}>
                                         <div className="empty-state">
-                                            <div className="empty-state-icon"><i className="bi bi-person-x"></i></div>
-                                            <div className="empty-state-title">Nenhum registo</div>
-                                            <div className="empty-state-text">Este colaborador não possui movimentações registadas</div>
+                                            <div className="empty-state-icon"><i className="bi bi-person-slash"></i></div>
+                                            <div className="empty-state-title">Sem registros para este colaborador</div>
+                                            <div className="empty-state-text">Nenhuma movimentação foi encontrada</div>
                                         </div>
                                     </td>
                                 </tr>
