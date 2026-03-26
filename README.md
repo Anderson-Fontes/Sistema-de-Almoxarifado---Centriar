@@ -252,7 +252,7 @@ cd Sistema-de-Almoxarifado---Centriar
 ```bash
 cd backend
 npm install       # Instala as dependências
-node server.js    # Inicia o servidor
+npm start         # Inicia o servidor
 ```
 
 > 🟢 API disponível em: `http://localhost:3333`
