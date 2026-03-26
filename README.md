@@ -372,6 +372,4 @@ desde que mantenha o aviso de copyright original.
 **Centriar © 2026 • Sistema de Almoxarifado**  
 *Desenvolvido com foco em performance, escalabilidade e organização.*
 
-![Visitor Count](https://komarev.com/ghpvc/?username=anderson-junior&color=3b82f6&style=flat-square&label=Visitantes+no+perfil)
-
 </div>
