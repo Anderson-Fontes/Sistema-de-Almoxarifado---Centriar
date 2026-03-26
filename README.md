@@ -353,7 +353,7 @@ desde que mantenha o aviso de copyright original.
 
 <div align="center">
 
-### Anderson Junior
+### Anderson Fontes Fernandes Júnior
 
 **Desenvolvedor Full Stack** — Brasil 🇧🇷
 
