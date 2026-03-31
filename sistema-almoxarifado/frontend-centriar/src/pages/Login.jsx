@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import logoCentriar from '../assets/logo_sem_fundo.png';
+import api from '../services/api'; // 💡 Importação da API adicionada aqui
 
 export default function Login({ onLogin }) {
     const [cpf, setCpf] = useState('');
@@ -16,14 +17,23 @@ export default function Login({ onLogin }) {
         setCpf(value);
     };
 
-    const handleSubmit = (e) => {
+    // 💡 Função handleSubmit atualizada para conectar com o Backend Real
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        
         if (cpf.length === 14 && password.length > 0) {
             setLoading(true);
-            setTimeout(() => {
+            try {
+                // Envia o CPF e a senha para o servidor verificar
+                const response = await api.post('/login', { cpf, senha: password });
+                
+                // Se o servidor autorizar, passa os dados do usuário e o token (crachá)
+                onLogin(response.data.user, response.data.token);
+            } catch (error) {
+                // Se der erro (senha errada, etc), avisa o usuário e tira o loading
+                alert(error.response?.data?.error || 'Erro ao conectar. Verifique suas credenciais.');
                 setLoading(false);
-                onLogin();
-            }, 800);
+            }
         } else {
             alert('Preencha CPF e Senha corretamente.');
         }

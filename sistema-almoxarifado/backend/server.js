@@ -3,10 +3,44 @@ const cors = require('cors');
 const pool = require('./database');
 const path = require('path');
 
+const jwt = require('jsonwebtoken');
+const SEGREDO = 'chave_super_secreta_centriar_2026';
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
+
+// --- ROTA DE LOGIN ---
+app.post('/api/login', async (req, res) => {
+    const { cpf, senha } = req.body;
+    try {
+        const { rows } = await pool.query('SELECT * FROM usuarios WHERE cpf = $1 AND senha = $2', [cpf, senha]);
+        if (rows.length === 0) return res.status(401).json({ error: 'CPF ou senha inválidos' });
+        
+        const usuario = rows[0];
+        const token = jwt.sign({ id: usuario.id, perfil: usuario.perfil }, SEGREDO, { expiresIn: '8h' });
+        
+        res.json({ token, user: { nome: usuario.nome, perfil: usuario.perfil } });
+    } catch (err) { 
+        res.status(500).json({ error: 'Erro no servidor' }); 
+    }
+});
+
+// --- BARREIRA DE SEGURANÇA ADMIN ---
+const verificarAdmin = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Token não fornecido.' });
+
+    const token = authHeader.split(' ')[1];
+    try {
+        const payload = jwt.verify(token, SEGREDO);
+        if (payload.perfil !== 'ADMIN') return res.status(403).json({ error: 'Apenas Administradores.' });
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Token inválido.' });
+    }
+};
 
 app.get('/api/epis', async (req, res) => {
     try {
@@ -15,43 +49,49 @@ app.get('/api/epis', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao buscar dados do banco.' }); }
 });
 
-app.post('/api/epis', async (req, res) => {
-    const { codigo_identificacao, nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, estoque_minimo, peso_minimo, estado, bitola, nivel_pacote } = req.body;
+// 💡 BLOQUEIO ADICIONADO AQUI
+app.post('/api/epis', verificarAdmin, async (req, res) => {
+    const { codigo_identificacao, nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, estoque_minimo, peso_minimo, estado, bitola, nivel_pacote, voltagem, gas_refrigerante, btu, tecnologia } = req.body;
     try {
         const query = `
-            INSERT INTO epis (nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, codigo_identificacao, estoque_minimo, peso_minimo, estado, bitola, nivel_pacote) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *
+            INSERT INTO epis (nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, codigo_identificacao, estoque_minimo, peso_minimo, estado, bitola, nivel_pacote, voltagem, gas_refrigerante, btu, tecnologia) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *
         `;
         const result = await pool.query(query, [
             nome, categoria, numero_ca, validade_ca || null, quantidade || 0, 
             peso || null, comprimento || null, codigo_identificacao || null, 
-            estoque_minimo || 0, peso_minimo || 0, estado || 'Novo', bitola || '1/4', nivel_pacote || null
+            estoque_minimo || 0, peso_minimo || 0, estado || 'Novo', bitola || '1/4', nivel_pacote || null,
+            voltagem || null, gas_refrigerante || null, btu || null, tecnologia || null
         ]);
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: 'Erro ao salvar.' }); }
 });
 
-app.put('/api/epis/:id', async (req, res) => {
+// 💡 BLOQUEIO ADICIONADO AQUI
+app.put('/api/epis/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
-    const { codigo_identificacao, nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, estoque_minimo, peso_minimo, estado, bitola, nivel_pacote } = req.body;
+    const { codigo_identificacao, nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, estoque_minimo, peso_minimo, estado, bitola, nivel_pacote, voltagem, gas_refrigerante, btu, tecnologia } = req.body;
     try {
         const query = `
             UPDATE epis 
             SET nome = $1, categoria = $2, numero_ca = $3, validade_ca = $4, 
                 quantidade = $5, peso = $6, comprimento = $7, codigo_identificacao = $8, 
-                estoque_minimo = $9, peso_minimo = $10, estado = $11, bitola = $12, nivel_pacote = $13 
-            WHERE id = $14 RETURNING *
+                estoque_minimo = $9, peso_minimo = $10, estado = $11, bitola = $12, nivel_pacote = $13,
+                voltagem = $14, gas_refrigerante = $15, btu = $16, tecnologia = $17
+            WHERE id = $18 RETURNING *
         `;
         const result = await pool.query(query, [
             nome, categoria, numero_ca, validade_ca || null, quantidade || 0, 
             peso || null, comprimento || null, codigo_identificacao || null, 
-            estoque_minimo || 0, peso_minimo || 0, estado || 'Novo', bitola || '1/4', nivel_pacote || null, id
+            estoque_minimo || 0, peso_minimo || 0, estado || 'Novo', bitola || '1/4', nivel_pacote || null,
+            voltagem || null, gas_refrigerante || null, btu || null, tecnologia || null, id
         ]);
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: 'Erro ao atualizar.' }); }
 });
 
-app.delete('/api/epis/:id', async (req, res) => {
+// 💡 BLOQUEIO ADICIONADO AQUI
+app.delete('/api/epis/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         await pool.query('UPDATE movimentacoes SET epi_id = NULL WHERE epi_id = $1', [id]);
@@ -67,7 +107,8 @@ app.get('/api/colaboradores', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao buscar colaboradores.' }); }
 });
 
-app.post('/api/colaboradores', async (req, res) => {
+// 💡 BLOQUEIO ADICIONADO AQUI
+app.post('/api/colaboradores', verificarAdmin, async (req, res) => {
     const { nome, setor, status } = req.body;
     try {
         const query = `INSERT INTO colaboradores (nome, setor, status) VALUES ($1, $2, $3) RETURNING *`;
@@ -76,7 +117,8 @@ app.post('/api/colaboradores', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao cadastrar colaborador.' }); }
 });
 
-app.put('/api/colaboradores/:id', async (req, res) => {
+// 💡 BLOQUEIO ADICIONADO AQUI
+app.put('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     const { nome, setor, status } = req.body;
     try {
@@ -86,7 +128,8 @@ app.put('/api/colaboradores/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao atualizar colaborador.' }); }
 });
 
-app.delete('/api/colaboradores/:id', async (req, res) => {
+// 💡 BLOQUEIO ADICIONADO AQUI
+app.delete('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         await pool.query('UPDATE movimentacoes SET colaborador_id = NULL WHERE colaborador_id = $1', [id]);
@@ -98,8 +141,9 @@ app.delete('/api/colaboradores/:id', async (req, res) => {
 
 app.get('/api/movimentacoes', async (req, res) => {
     try {
+        // 💡 QUERY CORRIGIDA PARA PUXAR DADOS DO COMPRESSOR
         const query = `
-            SELECT m.*, c.nome as colaborador_nome, e.nome as material_nome_atual, e.categoria 
+            SELECT m.*, c.nome as colaborador_nome, e.nome as material_nome_atual, e.categoria, e.btu, e.gas_refrigerante, e.voltagem, e.tecnologia 
             FROM movimentacoes m
             LEFT JOIN colaboradores c ON m.colaborador_id = c.id
             LEFT JOIN epis e ON m.epi_id = e.id
@@ -130,7 +174,7 @@ app.put('/api/movimentacoes/:id/devolver', async (req, res) => {
     
     try {
         let consumo = 0;
-        let qtdDevolvida = parseFloat(quantidade_devolvida) || 0; // Agora aceita decimais
+        let qtdDevolvida = parseFloat(quantidade_devolvida) || 0;
 
         if (epi_id) {
             if (categoria === 'Gás' || categoria === 'Cobre') {
@@ -162,8 +206,9 @@ app.delete('/api/movimentacoes/:id', async (req, res) => {
 
 app.get('/api/agendamentos', async (req, res) => {
     try {
+        // 💡 QUERY CORRIGIDA PARA PUXAR DADOS DO COMPRESSOR
         const query = `
-            SELECT a.*, c.nome as colaborador_nome, e.nome as material_nome_atual, e.categoria, e.peso as peso_atual, e.quantidade as qtd_atual
+            SELECT a.*, c.nome as colaborador_nome, e.nome as material_nome_atual, e.categoria, e.peso as peso_atual, e.quantidade as qtd_atual, e.btu, e.gas_refrigerante, e.voltagem, e.tecnologia
             FROM agendamentos a
             LEFT JOIN colaboradores c ON a.colaborador_id = c.id
             LEFT JOIN epis e ON a.epi_id = e.id

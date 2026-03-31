@@ -4,7 +4,8 @@ import api from '../services/api';
 
 const estadoInicialForm = { id: null, nome: '', setor: '', status: 'Ativo' };
 
-export default function Colaboradores() {
+// 💡 A função agora recebe a propriedade 'user'
+export default function Colaboradores({ user }) {
     const [colaboradores, setColaboradores] = useState([]);
     const [busca, setBusca] = useState('');
     const [showForm, setShowForm] = useState(false);
@@ -56,9 +57,13 @@ export default function Colaboradores() {
                             <i className="bi bi-search"></i>
                             <input className="search-input" placeholder="Buscar colaborador..." value={busca} onChange={e => setBusca(e.target.value)} />
                         </div>
-                        <button className="btn-primary-custom" onClick={abrirPainelNovo}>
-                            <i className="bi bi-person-plus-fill"></i> Novo Colaborador
-                        </button>
+                        
+                        {/* 💡 Botão bloqueado: Só ADMIN pode adicionar colaboradores */}
+                        {user?.perfil === 'ADMIN' && (
+                            <button className="btn-primary-custom" onClick={abrirPainelNovo}>
+                                <i className="bi bi-person-plus-fill"></i> Novo Colaborador
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -69,7 +74,8 @@ export default function Colaboradores() {
                                 <th>Colaborador</th>
                                 <th>Setor / Departamento</th>
                                 <th style={{ textAlign: 'center' }}>Status</th>
-                                <th style={{ textAlign: 'right' }}>Ações</th>
+                                {/* Se não for Admin, não mostra a palavra "Ações" no cabeçalho */}
+                                {user?.perfil === 'ADMIN' && <th style={{ textAlign: 'right' }}>Ações</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -89,12 +95,16 @@ export default function Colaboradores() {
                                             {colab.status === 'Ativo' ? <><i className="bi bi-check-circle-fill me-1"></i> Ativo</> : <><i className="bi bi-x-circle-fill me-1"></i> Inativo</>}
                                         </span>
                                     </td>
-                                    <td style={{ textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                            <button className="btn-ghost" onClick={() => prepararEdicao(colab)} title="Editar"><i className="bi bi-pencil-square"></i></button>
-                                            <button className="btn-ghost" style={{ color: '#ef4444', borderColor: 'transparent' }} onClick={() => excluirColaborador(colab.id, colab.nome)} title="Excluir"><i className="bi bi-trash3-fill"></i></button>
-                                        </div>
-                                    </td>
+                                    
+                                    {/* 💡 Botões bloqueados: Só ADMIN pode editar e excluir */}
+                                    {user?.perfil === 'ADMIN' && (
+                                        <td style={{ textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button className="btn-ghost" onClick={() => prepararEdicao(colab)} title="Editar"><i className="bi bi-pencil-square"></i></button>
+                                                <button className="btn-ghost" style={{ color: '#ef4444', borderColor: 'transparent' }} onClick={() => excluirColaborador(colab.id, colab.nome)} title="Excluir"><i className="bi bi-trash3-fill"></i></button>
+                                            </div>
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

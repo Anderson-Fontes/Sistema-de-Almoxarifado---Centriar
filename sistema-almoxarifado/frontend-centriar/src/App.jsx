@@ -6,7 +6,7 @@ import Estoque from './pages/Estoque';
 import Movimentacoes from './pages/Movimentacoes';
 import Colaboradores from './pages/Colaboradores';
 import Relatorios from './pages/Relatorios';
-import Login from './pages/Login'; // 💡 Importação da nova tela de Login
+import Login from './pages/Login';
 
 // Importação da logo
 import logoCentriar from './assets/logo_sem_fundo.png'; 
@@ -25,8 +25,8 @@ const pageTitles = {
   '/relatorios':     { title: 'Relatórios',      sub: 'Análises e exportações' },
 };
 
-// 💡 Passamos a função onLogout como propriedade para o Layout
-function Layout({ onLogout }) {
+// 💡 A função Layout agora recebe a propriedade 'user'
+function Layout({ onLogout, user }) {
   const location = useLocation();
   const page = pageTitles[location.pathname] || pageTitles['/'];
   const now = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
@@ -74,10 +74,12 @@ function Layout({ onLogout }) {
         {/* Footer */}
         <div className="sidebar-footer">
           <div className="user-card">
-            <div className="user-avatar">C</div>
+            {/* 💡 A letra do avatar muda de acordo com a primeira letra do nome do usuário */}
+            <div className="user-avatar">{user?.nome ? user.nome.charAt(0).toUpperCase() : 'U'}</div>
             <div>
-              <div className="user-name">CENTRIAR</div>
-              <div className="user-role">Administrador</div>
+              {/* 💡 Exibimos o nome e o perfil real de quem logou */}
+              <div className="user-name">{user?.nome || 'Usuário'}</div>
+              <div className="user-role">{user?.perfil === 'ADMIN' ? 'Administrador' : 'Visualizador'}</div>
             </div>
           </div>
         </div>
@@ -110,7 +112,7 @@ function Layout({ onLogout }) {
                   border: '2px solid rgba(99,102,241,0.3)',
                   cursor: 'pointer'
                 }}>
-                  C
+                  {user?.nome ? user.nome.charAt(0).toUpperCase() : 'U'}
                 </div>
                 {/* 💡 Botão de Logout adicionado ao Header */}
                 <button onClick={onLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', padding: '4px 8px', borderRadius: '6px' }} title="Sair do Sistema">
@@ -123,10 +125,11 @@ function Layout({ onLogout }) {
         {/* Page content */}
         <div className="page-content">
           <Routes>
-            <Route path="/" element={<Estoque />} />
-            <Route path="/movimentacoes" element={<Movimentacoes />} />
-            <Route path="/colaboradores" element={<Colaboradores />} />
-            <Route path="/relatorios" element={<Relatorios />} />
+            {/* 💡 Repassamos a propriedade user para as páginas filhas saberem quem está acessando */}
+            <Route path="/" element={<Estoque user={user} />} />
+            <Route path="/movimentacoes" element={<Movimentacoes user={user} />} />
+            <Route path="/colaboradores" element={<Colaboradores user={user} />} />
+            <Route path="/relatorios" element={<Relatorios user={user} />} />
           </Routes>
         </div>
       </div>
@@ -135,18 +138,32 @@ function Layout({ onLogout }) {
 }
 
 function App() {
-  // 💡 Estado Central de Autenticação (Falso por padrão para exibir o Login primeiro)
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // 💡 O estado agora começa lendo do LocalStorage para manter o usuário logado mesmo ao dar F5
+  const [user, setUser] = useState(() => {
+      const savedUser = localStorage.getItem('@Centriar:user');
+      return savedUser ? JSON.parse(savedUser) : null;
+  });
 
-  // 💡 Se não estiver autenticado, exibe a tela de Login
-  if (!isAuthenticated) {
-    return <Login onLogin={() => setIsAuthenticated(true)} />;
+  const handleLogin = (userData, token) => {
+      localStorage.setItem('@Centriar:token', token);
+      localStorage.setItem('@Centriar:user', JSON.stringify(userData));
+      setUser(userData);
+  };
+
+  const handleLogout = () => {
+      localStorage.clear();
+      setUser(null);
+  };
+
+  // 💡 Se não houver usuário logado (estado null), renderiza a tela de login
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
   }
 
-  // 💡 Se estiver autenticado, exibe o sistema com as rotas
   return (
     <BrowserRouter>
-      <Layout onLogout={() => setIsAuthenticated(false)} />
+      {/* Passamos o user logado para o Layout principal */}
+      <Layout onLogout={handleLogout} user={user} />
     </BrowserRouter>
   );
 }

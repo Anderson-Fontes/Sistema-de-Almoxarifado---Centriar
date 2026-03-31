@@ -9,6 +9,7 @@ const categoriaBadge = {
     'Gás':            { cls: 'badge-gas',        icon: 'bi-fire' },
     'Cobre':          { cls: 'badge-cobre',      icon: 'bi-layers-fill' },
     'Cabo/Mangueira': { cls: 'badge-cabo',       icon: 'bi-plug-fill' },
+    'Compressor':     { cls: 'badge-compressor', icon: 'bi-cpu-fill' }, // 💡 Nova Categoria Adicionada
     'Outros':         { cls: 'badge-outros',     icon: 'bi-grid-3x3-gap-fill' },
 };
 
@@ -17,23 +18,19 @@ const pesoPorMetroCobre = { '1/4': 0.114, '3/8': 0.181, '1/2': 0.255, '5/8': 0.3
 const estadoInicialForm = {
     id: null, codigo_identificacao: '', nome: '', categoria: 'EPI',
     numero_ca: '', validade_ca: '', quantidade: 1, estoque_minimo: 5,
-    peso: '', peso_minimo: '', comprimento: '', bitola: '1/4', estado: 'Novo', nivel_pacote: ''
+    peso: '', peso_minimo: '', comprimento: '', bitola: '1/4', estado: 'Novo', nivel_pacote: '',
+    // 💡 Novos campos do Compressor
+    btu: '12000', gas_refrigerante: 'R-410A', voltagem: '220V Monofásico', tecnologia: 'Inverter'
 };
 
 const coresEstado = { 'Novo': 'text-success', 'Bom Estado': 'text-primary', 'Marcas de Uso': 'text-warning', 'Com Defeito': 'text-danger', 'Quebrado / Sucata': 'text-danger fw-bold' };
 
-// 💡 CALCULADORA CORRIGIDA (Isola o fuso horário corretamente)
 const calcularDiasVencimento = (dataIso) => {
     if (!dataIso) return null;
     try {
-        const hoje = new Date(); 
-        hoje.setHours(0, 0, 0, 0);
-        
-        // Separa só a parte "YYYY-MM-DD" do banco para não dar conflito com as horas
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
         const dataLimpa = dataIso.split('T')[0];
-        const vencimento = new Date(dataLimpa + 'T12:00:00'); 
-        vencimento.setHours(0, 0, 0, 0);
-        
+        const vencimento = new Date(dataLimpa + 'T12:00:00'); vencimento.setHours(0, 0, 0, 0);
         const dias = Math.ceil((vencimento - hoje) / (1000 * 60 * 60 * 24));
         return isNaN(dias) ? null : dias;
     } catch (e) {
@@ -56,7 +53,8 @@ export default function Estoque() {
     const prepararEdicao = (m) => {
         setFormData({ 
             ...m, validade_ca: m.validade_ca ? m.validade_ca.split('T')[0] : '', 
-            bitola: m.bitola || '1/4', estado: m.estado || 'Novo', nivel_pacote: m.nivel_pacote || ''
+            bitola: m.bitola || '1/4', estado: m.estado || 'Novo', nivel_pacote: m.nivel_pacote || '',
+            btu: m.btu || '12000', gas_refrigerante: m.gas_refrigerante || 'R-410A', voltagem: m.voltagem || '220V Monofásico', tecnologia: m.tecnologia || 'Inverter'
         });
         setShowForm(true);
     };
@@ -71,10 +69,14 @@ export default function Estoque() {
         const { name, value } = e.target;
         let novoForm = { ...formData, [name]: value };
 
+        // Lógica Inteligente: Limpar campos inúteis ao trocar de categoria
         if (name === 'categoria') {
-            if (value === 'Gás') novoForm = { ...novoForm, comprimento: '', bitola: '', peso: '', peso_minimo: '', nivel_pacote: '' };
-            else if (value === 'Cobre') novoForm = { ...novoForm, peso: '', comprimento: '', bitola: '1/4', peso_minimo: '', nivel_pacote: '' };
-            else novoForm = { ...novoForm, peso: '', peso_minimo: '', comprimento: '', bitola: '' };
+            const baseLimpa = { peso: '', peso_minimo: '', comprimento: '', bitola: '', nivel_pacote: '', btu: '', gas_refrigerante: '', voltagem: '', tecnologia: '' };
+            
+            if (value === 'Gás') novoForm = { ...novoForm, ...baseLimpa };
+            else if (value === 'Cobre') novoForm = { ...novoForm, ...baseLimpa, bitola: '1/4' };
+            else if (value === 'Compressor') novoForm = { ...novoForm, ...baseLimpa, btu: '12000', gas_refrigerante: 'R-410A', voltagem: '220V Monofásico', tecnologia: 'Inverter' };
+            else novoForm = { ...novoForm, ...baseLimpa };
         }
 
         if (novoForm.categoria === 'Cobre' && (name === 'peso' || name === 'bitola')) {
@@ -148,9 +150,7 @@ export default function Estoque() {
                     <div style={{ color: '#d97706', fontSize: '24px' }}><i className="bi bi-shield-exclamation"></i></div>
                     <div>
                         <div style={{ fontWeight: 700, color: '#92400e', marginBottom: '4px' }}>Atenção: Validade de C.A.</div>
-                        <div style={{ color: '#b45309', fontSize: '14px' }}>
-                            {casEmAlerta.length} {casEmAlerta.length === 1 ? 'EPI está' : 'EPIs estão'} com o Certificado de Aprovação vencido ou vencendo nos próximos 30 dias.
-                        </div>
+                        <div style={{ color: '#b45309', fontSize: '14px' }}>{casEmAlerta.length} {casEmAlerta.length === 1 ? 'EPI está' : 'EPIs estão'} com o Certificado de Aprovação vencido ou vencendo nos próximos 30 dias.</div>
                     </div>
                 </div>
             )}
@@ -189,28 +189,31 @@ export default function Estoque() {
                                 const isGasOuCobre = mat.categoria === 'Gás' || mat.categoria === 'Cobre';
                                 const isPacote = !!mat.nivel_pacote;
 
-                                // 💡 RENDERIZAÇÃO DO C.A. CORRIGIDA E COM DATA EXATA
+                                // Lógica de Renderização do C.A.
                                 let textoCA = null;
                                 if (mat.categoria === 'EPI' && mat.numero_ca) {
                                     const diasCA = calcularDiasVencimento(mat.validade_ca);
                                     let dataFormatada = '';
-                                    
                                     if (mat.validade_ca) {
                                         const dataLimpa = mat.validade_ca.split('T')[0];
                                         dataFormatada = new Date(dataLimpa + 'T12:00:00').toLocaleDateString('pt-BR');
                                     }
+                                    if (diasCA === null) textoCA = <div className="text-muted mt-1"><i className="bi bi-shield-check"></i> C.A.: {mat.numero_ca} (Sem validade informada)</div>;
+                                    else if (diasCA < 0) textoCA = <div className="text-danger fw-bold mt-1"><i className="bi bi-shield-x"></i> C.A.: {mat.numero_ca} (Vencido em {dataFormatada})</div>;
+                                    else if (diasCA === 0) textoCA = <div className="text-danger fw-bold mt-1"><i className="bi bi-shield-exclamation"></i> C.A.: {mat.numero_ca} (Vence HOJE: {dataFormatada})</div>;
+                                    else if (diasCA <= 30) textoCA = <div className="text-warning fw-bold mt-1"><i className="bi bi-shield-exclamation"></i> C.A.: {mat.numero_ca} (Vence em {dataFormatada} - Faltam {diasCA} dias)</div>;
+                                    else textoCA = <div className="text-success mt-1"><i className="bi bi-shield-check"></i> C.A.: {mat.numero_ca} (Válido até {dataFormatada})</div>;
+                                }
 
-                                    if (diasCA === null) {
-                                        textoCA = <div className="text-muted mt-1"><i className="bi bi-shield-check"></i> C.A.: {mat.numero_ca} (Sem validade informada)</div>;
-                                    } else if (diasCA < 0) {
-                                        textoCA = <div className="text-danger fw-bold mt-1"><i className="bi bi-shield-x"></i> C.A.: {mat.numero_ca} (Vencido em {dataFormatada})</div>;
-                                    } else if (diasCA === 0) {
-                                        textoCA = <div className="text-danger fw-bold mt-1"><i className="bi bi-shield-exclamation"></i> C.A.: {mat.numero_ca} (Vence HOJE: {dataFormatada})</div>;
-                                    } else if (diasCA <= 30) {
-                                        textoCA = <div className="text-warning fw-bold mt-1"><i className="bi bi-shield-exclamation"></i> C.A.: {mat.numero_ca} (Vence em {dataFormatada} - Faltam {diasCA} dias)</div>;
-                                    } else {
-                                        textoCA = <div className="text-success mt-1"><i className="bi bi-shield-check"></i> C.A.: {mat.numero_ca} (Válido até {dataFormatada})</div>;
-                                    }
+                                // 💡 Lógica de Renderização do Compressor na Tabela
+                                let textoCompressor = null;
+                                if (mat.categoria === 'Compressor') {
+                                    textoCompressor = (
+                                        <div className="mt-1" style={{ fontSize: '11px', color: '#0284c7', fontWeight: 600 }}>
+                                            <i className="bi bi-cpu-fill me-1"></i> 
+                                            {mat.btu} BTUs | {mat.gas_refrigerante} | {mat.voltagem} | {mat.tecnologia}
+                                        </div>
+                                    );
                                 }
 
                                 return (
@@ -221,6 +224,7 @@ export default function Estoque() {
                                             <div className="cell-sub" style={{ fontSize: '11.5px', marginTop: '2px' }}>
                                                 Estado: <span className={coresEstado[mat.estado] || 'text-muted'}>{mat.estado || 'Não informado'}</span>
                                                 {textoCA}
+                                                {textoCompressor}
                                             </div>
                                         </td>
                                         <td><span className={`badge-pill ${badge.cls}`}><i className={`bi ${badge.icon}`} style={{ fontSize: 10 }}></i> {mat.categoria}</span></td>
@@ -254,7 +258,7 @@ export default function Estoque() {
                 </Offcanvas.Header>
                 <Offcanvas.Body className="p-4">
                     <form onSubmit={salvarMaterial}>
-                        <div className="mb-3"><label className="form-label-custom">Código (SKU) / ID Cilindro</label><input className="form-control-custom" type="text" name="codigo_identificacao" value={formData.codigo_identificacao} onChange={handleChange} /></div>
+                        <div className="mb-3"><label className="form-label-custom">Código (SKU) / Modelo / P.N.</label><input className="form-control-custom" type="text" name="codigo_identificacao" value={formData.codigo_identificacao} onChange={handleChange} placeholder="Ex: PH215X2C" /></div>
                         <div className="mb-3"><label className="form-label-custom">Descrição do Material <span className="text-danger">*</span></label><input className="form-control-custom" type="text" name="nome" required value={formData.nome} onChange={handleChange} /></div>
                         <div className="row mb-4">
                             <div className="col-6">
@@ -263,6 +267,7 @@ export default function Estoque() {
                                     <option value="EPI">Proteção (EPI)</option>
                                     <option value="Consumível">Consumível</option>
                                     <option value="Ferramenta">Ferramenta</option>
+                                    <option value="Compressor">Compressor</option> {/* 💡 Nova Categoria no Dropdown */}
                                     <option value="Gás">Gás / Fluidos</option>
                                     <option value="Cobre">Cobre</option>
                                     <option value="Cabo/Mangueira">Cabo / Mangueira</option>
@@ -274,6 +279,53 @@ export default function Estoque() {
                                 <select className="form-select-custom" name="estado" value={formData.estado} onChange={handleChange}><option value="Novo">Novo</option><option value="Bom Estado">Bom Estado</option><option value="Marcas de Uso">Marcas de Uso</option><option value="Com Defeito">Com Defeito</option><option value="Quebrado / Sucata">Quebrado / Sucata</option></select>
                             </div>
                         </div>
+
+                        {/* 💡 SESSÃO EXCLUSIVA DO COMPRESSOR */}
+                        {formData.categoria === 'Compressor' && (
+                            <div className="form-highlight" style={{ background: '#f0f9ff', borderColor: '#7dd3fc', marginBottom: '16px' }}>
+                                <label className="form-label-custom text-primary" style={{color: '#0284c7'}}><i className="bi bi-cpu-fill me-1"></i> Especificações Técnicas</label>
+                                <div className="row g-2 mt-1">
+                                    <div className="col-6">
+                                        <label className="form-label-custom" style={{fontSize: '10px'}}>Capacidade (BTUs)</label>
+                                        <select className="form-select-custom" style={{fontSize: '13px'}} name="btu" value={formData.btu} onChange={handleChange}>
+                                            <option value="9000">9.000 BTUs</option>
+                                            <option value="12000">12.000 BTUs</option>
+                                            <option value="18000">18.000 BTUs</option>
+                                            <option value="24000">24.000 BTUs</option>
+                                            <option value="30000">30.000 BTUs</option>
+                                            <option value="36000">36.000 BTUs</option>
+                                            <option value="60000">60.000 BTUs</option>
+                                        </select>
+                                    </div>
+                                    <div className="col-6">
+                                        <label className="form-label-custom" style={{fontSize: '10px'}}>Gás Refrigerante</label>
+                                        <select className="form-select-custom" style={{fontSize: '13px'}} name="gas_refrigerante" value={formData.gas_refrigerante} onChange={handleChange}>
+                                            <option value="R-410A">R-410A</option>
+                                            <option value="R-22">R-22</option>
+                                            <option value="R-32">R-32</option>
+                                            <option value="R-134a">R-134a</option>
+                                            <option value="R-404A">R-404A</option>
+                                        </select>
+                                    </div>
+                                    <div className="col-6">
+                                        <label className="form-label-custom" style={{fontSize: '10px'}}>Voltagem</label>
+                                        <select className="form-select-custom" style={{fontSize: '13px'}} name="voltagem" value={formData.voltagem} onChange={handleChange}>
+                                            <option value="220V Monofásico">220V Mono</option>
+                                            <option value="220V Trifásico">220V Tri</option>
+                                            <option value="380V Trifásico">380V Tri</option>
+                                            <option value="110V">110V</option>
+                                        </select>
+                                    </div>
+                                    <div className="col-6">
+                                        <label className="form-label-custom" style={{fontSize: '10px'}}>Tecnologia</label>
+                                        <select className="form-select-custom" style={{fontSize: '13px'}} name="tecnologia" value={formData.tecnologia} onChange={handleChange}>
+                                            <option value="Inverter">Inverter</option>
+                                            <option value="On/Off">On/Off (Convencional)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {formData.categoria === 'Gás' && (
                             <div className="form-highlight form-highlight-warning" style={{ background: '#fffbeb', borderColor: '#fcd34d' }}>
@@ -299,9 +351,10 @@ export default function Estoque() {
                             </div>
                         )}
 
+                        {/* Bloco de Quantidades Padrão (Ocultado apenas para Gás e Cobre) */}
                         {formData.categoria !== 'Gás' && formData.categoria !== 'Cobre' && (
                             <div style={{ marginBottom: '16px' }}>
-                                {formData.categoria !== 'Cabo/Mangueira' && (
+                                {formData.categoria !== 'Cabo/Mangueira' && formData.categoria !== 'Compressor' && (
                                     <div className="mb-3 d-flex gap-2">
                                         <button type="button" className={`btn ${!formData.nivel_pacote ? 'btn-primary' : 'btn-outline-primary'} flex-grow-1`} style={{ fontSize: 13, fontWeight: 600 }} onClick={() => alternarModoControle('unidade')}><i className="bi bi-123 me-2"></i>Por Unidade</button>
                                         <button type="button" className={`btn ${formData.nivel_pacote ? 'btn-primary' : 'btn-outline-primary'} flex-grow-1`} style={{ fontSize: 13, fontWeight: 600 }} onClick={() => alternarModoControle('pacote')}><i className="bi bi-box-seam me-2"></i>Por Pacote</button>
@@ -315,7 +368,7 @@ export default function Estoque() {
                                             <input className="form-control-custom" type="number" step={formData.categoria === 'Cabo/Mangueira' ? "0.01" : "1"} name="estoque_minimo" min="0" value={formData.estoque_minimo} onChange={handleChange} />
                                         </div>
                                         <div className="form-highlight" style={{ marginBottom: 0, width: '50%', borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.04)' }}>
-                                            <label className="form-label-custom" style={{ color: 'var(--primary-light)' }}>{formData.categoria === 'Cabo/Mangueira' ? 'Comprimento Total (m)' : 'Qtd Atual'}</label>
+                                            <label className="form-label-custom" style={{ color: 'var(--primary-light)' }}>{formData.categoria === 'Cabo/Mangueira' ? 'Comprimento Total (m)' : 'Qtd Atual (Unidades)'}</label>
                                             <input className="form-control-custom" type="number" step={formData.categoria === 'Cabo/Mangueira' ? "0.01" : "1"} name="quantidade" required min="0" value={formData.quantidade} onChange={handleChange} />
                                         </div>
                                     </div>
