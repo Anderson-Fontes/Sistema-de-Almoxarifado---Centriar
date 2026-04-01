@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Offcanvas, Modal } from 'react-bootstrap';
 import api from '../services/api';
 
-export default function Movimentacoes() {
+// 💡 A função agora recebe a propriedade 'user'
+export default function Movimentacoes({ user }) {
     const [viewMode, setViewMode] = useState('historico'); 
     
     const [movimentacoes, setMovimentacoes] = useState([]);
@@ -23,6 +24,9 @@ export default function Movimentacoes() {
     const [quantidadeDevolvida, setQuantidadeDevolvida] = useState('');
     const [estadoDevolucao, setEstadoDevolucao] = useState('Bom Estado');
 
+    // 💡 Trava de Perfil
+    const isAdmin = user?.perfil === 'ADMIN';
+
     const carregarDados = useCallback(() => {
         api.get('/movimentacoes').then(r => setMovimentacoes(r.data)).catch(console.error);
         api.get('/agendamentos').then(r => setAgendamentos(r.data)).catch(console.error);
@@ -37,10 +41,16 @@ export default function Movimentacoes() {
         setFormData({ ...formData, epi_id: e.target.value, medida_inicial: mat?.peso || mat?.comprimento || '' });
     };
 
-    const abrirForm = () => { setFormData(formInicial); setShowForm(true); };
+    const abrirForm = () => { 
+        if (!isAdmin) return; // Segurança
+        setFormData(formInicial); 
+        setShowForm(true); 
+    };
 
     const salvarRegistro = (e) => {
         e.preventDefault();
+        if (!isAdmin) return; // Segurança
+
         const mat = materiais.find(m => m.id === parseInt(formData.epi_id));
         const payload = { ...formData, nome_material_salvo: mat?.nome, quantidade_retirada: formData.quantidade };
 
@@ -56,6 +66,7 @@ export default function Movimentacoes() {
     };
 
     const abrirDevolucao = (mov) => { 
+        if (!isAdmin) return; // Segurança
         setItemDevolucao(mov); 
         setMedidaFinal(''); 
         setQuantidadeDevolvida(mov.quantidade_retirada);
@@ -65,6 +76,7 @@ export default function Movimentacoes() {
     };
     
     const registrarDevolucao = () => {
+        if (!isAdmin) return; // Segurança
         const payload = { 
             epi_id: itemDevolucao.epi_id, 
             quantidade_retirada: itemDevolucao.quantidade_retirada, 
@@ -81,6 +93,7 @@ export default function Movimentacoes() {
     };
 
     const confirmarAgendamento = (ag) => {
+        if (!isAdmin) return; // Segurança
         if (window.confirm(`Deseja confirmar a retirada de ${ag.material_nome_atual} por ${ag.colaborador_nome} agora?`)) {
             const mat = materiais.find(m => m.id === ag.epi_id);
             const payload = { epi_id: ag.epi_id, colaborador_id: ag.colaborador_id, quantidade: ag.quantidade, epi_nome: ag.material_nome_atual, medida_inicial: mat?.peso || null, categoria: ag.categoria, destino: ag.destino };
@@ -92,12 +105,14 @@ export default function Movimentacoes() {
     };
 
     const cancelarAgendamento = (id) => {
+        if (!isAdmin) return; // Segurança
         if (window.confirm("Cancelar este agendamento?")) {
             api.put(`/agendamentos/${id}/cancelar`).then(() => carregarDados()).catch(() => alert('Erro ao cancelar.'));
         }
     };
 
     const excluirRegistro = async (id, tipo) => {
+        if (!isAdmin) return; // Segurança
         if (window.confirm("Excluir este registro permanentemente do sistema?")) {
             const url = tipo === 'movimentacao' ? `/movimentacoes/${id}` : `/agendamentos/${id}`;
             try { await api.delete(url); carregarDados(); } catch (error) { alert('Erro ao excluir.'); }
@@ -163,9 +178,12 @@ export default function Movimentacoes() {
                         </div>
                         <div className="search-box"><i className="bi bi-search"></i><input className="search-input" placeholder="Buscar local, pessoa..." value={busca} onChange={e => setBusca(e.target.value)} /></div>
                         
-                        <button className="btn-primary-custom" onClick={abrirForm}>
-                            {viewMode === 'historico' ? <><i className="bi bi-box-arrow-right"></i> Retirar Agora</> : <><i className="bi bi-calendar-plus"></i> Agendar Retirada</>}
-                        </button>
+                        {/* 💡 Trava: Botão só aparece para Admin */}
+                        {isAdmin && (
+                            <button className="btn-primary-custom" onClick={abrirForm}>
+                                {viewMode === 'historico' ? <><i className="bi bi-box-arrow-right"></i> Retirar Agora</> : <><i className="bi bi-calendar-plus"></i> Agendar Retirada</>}
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -220,18 +238,23 @@ export default function Movimentacoes() {
                                         {item.status === 'CANCELADO' && <span className="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-1 rounded-pill"><i className="bi bi-x-circle-fill me-1"></i> Cancelado</span>}
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                            {viewMode === 'historico' && item.status === 'EM_USO' && (
-                                                <button className="btn btn-sm btn-outline-success fw-bold" onClick={() => abrirDevolucao(item)}><i className="bi bi-arrow-return-left me-1"></i> Devolver</button>
-                                            )}
-                                            {viewMode === 'agendamentos' && item.status === 'AGENDADO' && (
-                                                <>
-                                                    <button className="btn btn-sm btn-success fw-bold text-white shadow-sm" onClick={() => confirmarAgendamento(item)}><i className="bi bi-check2-circle"></i> Liberar</button>
-                                                    <button className="btn btn-sm btn-outline-danger fw-bold" onClick={() => cancelarAgendamento(item.id)}><i className="bi bi-x-lg"></i></button>
-                                                </>
-                                            )}
-                                            <button className="btn-ghost" style={{ color: '#ef4444', borderColor: 'transparent' }} onClick={() => excluirRegistro(item.id, viewMode === 'historico' ? 'movimentacao' : 'agendamento')}><i className="bi bi-trash3-fill"></i></button>
-                                        </div>
+                                        {/* 💡 Trava: Ações só aparecem para Admin, ou então aparece a tag "Somente Leitura" */}
+                                        {isAdmin ? (
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                {viewMode === 'historico' && item.status === 'EM_USO' && (
+                                                    <button className="btn btn-sm btn-outline-success fw-bold" onClick={() => abrirDevolucao(item)}><i className="bi bi-arrow-return-left me-1"></i> Devolver</button>
+                                                )}
+                                                {viewMode === 'agendamentos' && item.status === 'AGENDADO' && (
+                                                    <>
+                                                        <button className="btn btn-sm btn-success fw-bold text-white shadow-sm" onClick={() => confirmarAgendamento(item)}><i className="bi bi-check2-circle"></i> Liberar</button>
+                                                        <button className="btn btn-sm btn-outline-danger fw-bold" onClick={() => cancelarAgendamento(item.id)}><i className="bi bi-x-lg"></i></button>
+                                                    </>
+                                                )}
+                                                <button className="btn-ghost" style={{ color: '#ef4444', borderColor: 'transparent' }} onClick={() => excluirRegistro(item.id, viewMode === 'historico' ? 'movimentacao' : 'agendamento')}><i className="bi bi-trash3-fill"></i></button>
+                                            </div>
+                                        ) : (
+                                            <span className="badge bg-light text-muted" style={{ fontSize: '10px' }}>Somente Leitura</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -241,112 +264,114 @@ export default function Movimentacoes() {
                 </div>
             </div>
 
-            {/* ─── OFFCANVAS: NOVA RETIRADA / NOVO AGENDAMENTO ─── */}
-            <Offcanvas show={showForm} onHide={() => setShowForm(false)} placement="end">
-                <Offcanvas.Header closeButton style={{ background: viewMode === 'agendamentos' ? '#fef3c7' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                    <Offcanvas.Title className="fw-bold text-dark">
-                        {viewMode === 'historico' ? <><i className="bi bi-box-arrow-right text-primary me-2"></i>Registrar Retirada</> : <><i className="bi bi-calendar-plus text-warning me-2"></i>Novo Agendamento</>}
-                    </Offcanvas.Title>
-                </Offcanvas.Header>
-                <Offcanvas.Body className="p-4">
-                    <form onSubmit={salvarRegistro}>
-                        
-                        {viewMode === 'agendamentos' && (
-                            <div className="form-group mb-4">
-                                <label className="form-label-custom">Data e Hora da Retirada <span className="text-danger">*</span></label>
-                                <input className="form-control-custom fw-bold" type="datetime-local" required value={formData.data_agendada} onChange={e => setFormData({ ...formData, data_agendada: e.target.value })} />
-                            </div>
-                        )}
+            {/* O formulário de registro/agendamento não precisa ser renderizado no DOM para visualizadores */}
+            {isAdmin && (
+                <Offcanvas show={showForm} onHide={() => setShowForm(false)} placement="end">
+                    <Offcanvas.Header closeButton style={{ background: viewMode === 'agendamentos' ? '#fef3c7' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <Offcanvas.Title className="fw-bold text-dark">
+                            {viewMode === 'historico' ? <><i className="bi bi-box-arrow-right text-primary me-2"></i>Registrar Retirada</> : <><i className="bi bi-calendar-plus text-warning me-2"></i>Novo Agendamento</>}
+                        </Offcanvas.Title>
+                    </Offcanvas.Header>
+                    <Offcanvas.Body className="p-4">
+                        <form onSubmit={salvarRegistro}>
+                            
+                            {viewMode === 'agendamentos' && (
+                                <div className="form-group mb-4">
+                                    <label className="form-label-custom">Data e Hora da Retirada <span className="text-danger">*</span></label>
+                                    <input className="form-control-custom fw-bold" type="datetime-local" required value={formData.data_agendada} onChange={e => setFormData({ ...formData, data_agendada: e.target.value })} />
+                                </div>
+                            )}
 
-                        <div className="form-group mb-3">
-                            <label className="form-label-custom">Colaborador <span className="text-danger">*</span></label>
-                            <select className="form-select-custom fw-bold" required value={formData.colaborador_id} onChange={e => setFormData({ ...formData, colaborador_id: e.target.value })}>
-                                <option value="">Selecione a pessoa...</option>
-                                {colaboradores.map(c => <option key={c.id} value={c.id}>{c.nome} — {c.setor}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="form-group mb-3">
-                            <label className="form-label-custom">Material / Ferramenta <span className="text-danger">*</span></label>
-                            <select className="form-select-custom fw-bold" required value={formData.epi_id} onChange={handleMaterialChange}>
-                                <option value="">Selecione o item...</option>
-                                {materiais.map(m => <option key={m.id} value={m.id}>{m.nome} (Estoque: {m.categoria === 'Gás' || m.categoria === 'Cobre' ? `${m.peso}kg` : m.quantidade})</option>)}
-                            </select>
-                        </div>
-
-                        <div className="row mb-3">
-                            <div className="col-6">
-                                <label className="form-label-custom">Qtd Solicitada <span className="text-danger">*</span></label>
-                                {/* 💡 Agora aceita quantidades quebradas (ex: 2.5 metros de cabo) */}
-                                <input className="form-control-custom fw-bold text-primary" type="number" step="0.01" min="0.01" required value={formData.quantidade} onChange={e => setFormData({ ...formData, quantidade: e.target.value })} />
+                            <div className="form-group mb-3">
+                                <label className="form-label-custom">Colaborador <span className="text-danger">*</span></label>
+                                <select className="form-select-custom fw-bold" required value={formData.colaborador_id} onChange={e => setFormData({ ...formData, colaborador_id: e.target.value })}>
+                                    <option value="">Selecione a pessoa...</option>
+                                    {colaboradores.map(c => <option key={c.id} value={c.id}>{c.nome} — {c.setor}</option>)}
+                                </select>
                             </div>
-                            <div className="col-6">
-                                <label className="form-label-custom">Destino / Uso</label>
-                                <input className="form-control-custom" type="text" placeholder="Ex: Obra XPTO..." value={formData.destino} onChange={e => setFormData({ ...formData, destino: e.target.value })} />
+
+                            <div className="form-group mb-3">
+                                <label className="form-label-custom">Material / Ferramenta <span className="text-danger">*</span></label>
+                                <select className="form-select-custom fw-bold" required value={formData.epi_id} onChange={handleMaterialChange}>
+                                    <option value="">Selecione o item...</option>
+                                    {materiais.map(m => <option key={m.id} value={m.id}>{m.nome} (Estoque: {m.categoria === 'Gás' || m.categoria === 'Cobre' ? `${m.peso}kg` : m.quantidade})</option>)}
+                                </select>
                             </div>
-                        </div>
-                        
-                        {estoqueInsuficiente && (
-                            <div className="alert-banner mb-4" style={{ background: '#fef2f2', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px' }}>
-                                <div style={{ color: '#b91c1c', fontSize: '13px', fontWeight: 600 }}>
-                                    <i className="bi bi-exclamation-octagon-fill me-2"></i>
-                                    Atenção: O estoque atual é insuficiente para atender essa solicitação completa.
+
+                            <div className="row mb-3">
+                                <div className="col-6">
+                                    <label className="form-label-custom">Qtd Solicitada <span className="text-danger">*</span></label>
+                                    <input className="form-control-custom fw-bold text-primary" type="number" step="0.01" min="0.01" required value={formData.quantidade} onChange={e => setFormData({ ...formData, quantidade: e.target.value })} />
+                                </div>
+                                <div className="col-6">
+                                    <label className="form-label-custom">Destino / Uso</label>
+                                    <input className="form-control-custom" type="text" placeholder="Ex: Obra XPTO..." value={formData.destino} onChange={e => setFormData({ ...formData, destino: e.target.value })} />
                                 </div>
                             </div>
+                            
+                            {estoqueInsuficiente && (
+                                <div className="alert-banner mb-4" style={{ background: '#fef2f2', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px' }}>
+                                    <div style={{ color: '#b91c1c', fontSize: '13px', fontWeight: 600 }}>
+                                        <i className="bi bi-exclamation-octagon-fill me-2"></i>
+                                        Atenção: O estoque atual é insuficiente para atender essa solicitação completa.
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 24 }}>
+                                <button type="submit" className={`btn-primary-custom ${viewMode === 'agendamentos' ? 'bg-warning border-warning text-dark' : ''}`} style={{ justifyContent: 'center', padding: '12px', fontSize: 14, borderRadius: 10 }}>
+                                    <i className="bi bi-check2-circle"></i> {viewMode === 'historico' ? 'Confirmar Retirada' : 'Salvar Agendamento'}
+                                </button>
+                                <button type="button" className="btn-ghost" style={{ justifyContent: 'center', padding: '12px', fontSize: 14, borderRadius: 10 }} onClick={() => setShowForm(false)}>Cancelar</button>
+                            </div>
+                        </form>
+                    </Offcanvas.Body>
+                </Offcanvas>
+            )}
+
+            {/* Modal de devolução também protegido do DOM para visualizadores */}
+            {isAdmin && (
+                <Modal show={showDevolucao} onHide={() => setShowDevolucao(false)} centered>
+                    <Modal.Header closeButton><Modal.Title><i className="bi bi-arrow-return-left text-success me-2"></i>Registrar Devolução</Modal.Title></Modal.Header>
+                    <Modal.Body>
+                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px', marginBottom: 18 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{itemDevolucao?.material_nome_atual || itemDevolucao?.epi_nome}</div>
+                            <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 2 }}>Com: <strong>{itemDevolucao?.colaborador_nome}</strong> | Destino: {itemDevolucao?.destino}</div>
+                        </div>
+                        
+                        {requerMedida ? (
+                            <div className="form-group mb-3">
+                                <label className="form-label-custom text-danger">Medida na devolução (kg) <span className="text-danger">*</span></label>
+                                <input className="form-control-custom fw-bold" type="number" step="0.01" placeholder={`Saiu com ${itemDevolucao?.medida_inicial}kg. Voltou com...`} value={medidaFinal} onChange={e => setMedidaFinal(e.target.value)} required style={{ borderColor: '#fca5a5' }} />
+                            </div>
+                        ) : (
+                            <div className="form-group mb-3">
+                                <label className="form-label-custom text-primary">Quantidade Devolvida <span className="text-danger">*</span></label>
+                                <div className="input-group">
+                                    <input className="form-control-custom fw-bold" type="number" step="0.01" min="0" max={itemDevolucao?.quantidade_retirada} value={quantidadeDevolvida} onChange={e => setQuantidadeDevolvida(e.target.value)} required />
+                                    <span className="input-group-text" style={{ fontSize: 12, background: '#f1f5f9' }}>de {itemDevolucao?.quantidade_retirada}</span>
+                                </div>
+                                <small className="text-muted" style={{ fontSize: 11 }}>Se gastou tudo na obra, coloque 0.</small>
+                            </div>
                         )}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 24 }}>
-                            <button type="submit" className={`btn-primary-custom ${viewMode === 'agendamentos' ? 'bg-warning border-warning text-dark' : ''}`} style={{ justifyContent: 'center', padding: '12px', fontSize: 14, borderRadius: 10 }}>
-                                <i className="bi bi-check2-circle"></i> {viewMode === 'historico' ? 'Confirmar Retirada' : 'Salvar Agendamento'}
-                            </button>
-                            <button type="button" className="btn-ghost" style={{ justifyContent: 'center', padding: '12px', fontSize: 14, borderRadius: 10 }} onClick={() => setShowForm(false)}>Cancelar</button>
+                        <div className="form-group">
+                            <label className="form-label-custom">Estado Físico da Ferramenta / Material</label>
+                            <select className="form-select-custom" value={estadoDevolucao} onChange={e => setEstadoDevolucao(e.target.value)}>
+                                <option value="Novo">Novo</option>
+                                <option value="Bom Estado">Bom Estado</option>
+                                <option value="Marcas de Uso">Marcas de Uso</option>
+                                <option value="Com Defeito">Com Defeito</option>
+                                <option value="Quebrado / Sucata">Quebrado / Sucata</option>
+                            </select>
                         </div>
-                    </form>
-                </Offcanvas.Body>
-            </Offcanvas>
-
-            {/* ─── MODAL: DEVOLUÇÃO INTELIGENTE ─── */}
-            <Modal show={showDevolucao} onHide={() => setShowDevolucao(false)} centered>
-                <Modal.Header closeButton><Modal.Title><i className="bi bi-arrow-return-left text-success me-2"></i>Registrar Devolução</Modal.Title></Modal.Header>
-                <Modal.Body>
-                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px', marginBottom: 18 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{itemDevolucao?.material_nome_atual || itemDevolucao?.epi_nome}</div>
-                        <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 2 }}>Com: <strong>{itemDevolucao?.colaborador_nome}</strong> | Destino: {itemDevolucao?.destino}</div>
-                    </div>
-                    
-                    {requerMedida ? (
-                        <div className="form-group mb-3">
-                            <label className="form-label-custom text-danger">Medida na devolução (kg) <span className="text-danger">*</span></label>
-                            <input className="form-control-custom fw-bold" type="number" step="0.01" placeholder={`Saiu com ${itemDevolucao?.medida_inicial}kg. Voltou com...`} value={medidaFinal} onChange={e => setMedidaFinal(e.target.value)} required style={{ borderColor: '#fca5a5' }} />
-                        </div>
-                    ) : (
-                        <div className="form-group mb-3">
-                            <label className="form-label-custom text-primary">Quantidade Devolvida <span className="text-danger">*</span></label>
-                            <div className="input-group">
-                                {/* 💡 Agora aceita devoluções quebradas (ex: devolveu 1.5 metros) */}
-                                <input className="form-control-custom fw-bold" type="number" step="0.01" min="0" max={itemDevolucao?.quantidade_retirada} value={quantidadeDevolvida} onChange={e => setQuantidadeDevolvida(e.target.value)} required />
-                                <span className="input-group-text" style={{ fontSize: 12, background: '#f1f5f9' }}>de {itemDevolucao?.quantidade_retirada}</span>
-                            </div>
-                            <small className="text-muted" style={{ fontSize: 11 }}>Se gastou tudo na obra, coloque 0.</small>
-                        </div>
-                    )}
-
-                    <div className="form-group">
-                        <label className="form-label-custom">Estado Físico da Ferramenta / Material</label>
-                        <select className="form-select-custom" value={estadoDevolucao} onChange={e => setEstadoDevolucao(e.target.value)}>
-                            <option value="Novo">Novo</option>
-                            <option value="Bom Estado">Bom Estado</option>
-                            <option value="Marcas de Uso">Marcas de Uso</option>
-                            <option value="Com Defeito">Com Defeito</option>
-                            <option value="Quebrado / Sucata">Quebrado / Sucata</option>
-                        </select>
-                    </div>
-                </Modal.Body>
-                <Modal.Footer>
-                    <button className="btn-ghost" onClick={() => setShowDevolucao(false)}>Cancelar</button>
-                    <button className="btn btn-success fw-bold text-white shadow-sm" onClick={registrarDevolucao} disabled={requerMedida ? !medidaFinal : quantidadeDevolvida === ''}><i className="bi bi-check2-circle me-2"></i>Confirmar Devolução</button>
-                </Modal.Footer>
-            </Modal>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <button className="btn-ghost" onClick={() => setShowDevolucao(false)}>Cancelar</button>
+                        <button className="btn btn-success fw-bold text-white shadow-sm" onClick={registrarDevolucao} disabled={requerMedida ? !medidaFinal : quantidadeDevolvida === ''}><i className="bi bi-check2-circle me-2"></i>Confirmar Devolução</button>
+                    </Modal.Footer>
+                </Modal>
+            )}
         </div>
     );
 }

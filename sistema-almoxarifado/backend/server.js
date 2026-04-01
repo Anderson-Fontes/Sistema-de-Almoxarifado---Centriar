@@ -11,7 +11,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
 
+// =======================================================
 // --- ROTA DE LOGIN ---
+// =======================================================
 app.post('/api/login', async (req, res) => {
     const { cpf, senha } = req.body;
     try {
@@ -21,13 +23,24 @@ app.post('/api/login', async (req, res) => {
         const usuario = rows[0];
         const token = jwt.sign({ id: usuario.id, perfil: usuario.perfil }, SEGREDO, { expiresIn: '8h' });
         
-        res.json({ token, user: { nome: usuario.nome, perfil: usuario.perfil } });
+        res.json({ 
+            token, 
+            user: { 
+                id: usuario.id, 
+                cpf: usuario.cpf, 
+                nome: usuario.nome, 
+                perfil: usuario.perfil, 
+                funcao: usuario.funcao 
+            } 
+        });
     } catch (err) { 
         res.status(500).json({ error: 'Erro no servidor' }); 
     }
 });
 
+// =======================================================
 // --- BARREIRA DE SEGURANÇA ADMIN ---
+// =======================================================
 const verificarAdmin = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Token não fornecido.' });
@@ -36,12 +49,85 @@ const verificarAdmin = (req, res, next) => {
     try {
         const payload = jwt.verify(token, SEGREDO);
         if (payload.perfil !== 'ADMIN') return res.status(403).json({ error: 'Apenas Administradores.' });
+        
+        req.usuarioToken = payload; 
         next();
     } catch (err) {
         return res.status(401).json({ error: 'Token inválido.' });
     }
 };
 
+// =======================================================
+// --- ROTAS DE GERENCIAMENTO DE USUÁRIOS (SISTEMA) ---
+// =======================================================
+app.get('/api/usuarios', verificarAdmin, async (req, res) => {
+    try {
+        // 💡 REGRA DE VISIBILIDADE MÁXIMA PARA O SUPER ADMIN (ID 1)
+        if (req.usuarioToken.id === 1) {
+            // O Super Admin recebe TODOS os usuários e TODAS as senhas
+            const query = 'SELECT id, nome, cpf, perfil, funcao, senha FROM usuarios ORDER BY id ASC';
+            const result = await pool.query(query);
+            return res.json(result.rows);
+        } else {
+            // 💡 REGRA PARA ADMINS NORMAIS
+            // Um Admin normal NÃO recebe senhas e NÃO VÊ o Super Admin (id != 1)
+            const query = 'SELECT id, nome, cpf, perfil, funcao FROM usuarios WHERE id != 1 ORDER BY nome ASC';
+            const result = await pool.query(query);
+            return res.json(result.rows);
+        }
+    } catch (err) { res.status(500).json({ error: 'Erro ao buscar usuários.' }); }
+});
+
+app.post('/api/usuarios', verificarAdmin, async (req, res) => {
+    const { nome, cpf, senha, perfil, funcao } = req.body;
+    try {
+        const query = `INSERT INTO usuarios (nome, cpf, senha, perfil, funcao) VALUES ($1, $2, $3, $4, $5) RETURNING id, nome, cpf, perfil, funcao`;
+        const result = await pool.query(query, [nome, cpf, senha, perfil || 'VISUALIZADOR', funcao || null]);
+        res.json(result.rows[0]);
+    } catch (err) {
+        if(err.code === '23505') return res.status(400).json({error: 'Este CPF já possui cadastro.'});
+        res.status(500).json({ error: 'Erro ao cadastrar usuário.' });
+    }
+});
+
+app.put('/api/usuarios/:id', verificarAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { nome, cpf, senha, perfil, funcao } = req.body;
+    
+    // 💡 Proteção extra: Um admin normal não pode alterar os dados do Super Admin (via Postman, por exemplo)
+    if (id === '1' && req.usuarioToken.id !== 1) {
+        return res.status(403).json({ error: 'Você não tem permissão para alterar o Super Admin.' });
+    }
+
+    try {
+        let query, params;
+        if (senha && senha.trim() !== '') {
+            query = `UPDATE usuarios SET nome = $1, cpf = $2, senha = $3, perfil = $4, funcao = $5 WHERE id = $6 RETURNING id, nome, cpf, perfil, funcao`;
+            params = [nome, cpf, senha, perfil, funcao || null, id];
+        } else {
+            query = `UPDATE usuarios SET nome = $1, cpf = $2, perfil = $3, funcao = $4 WHERE id = $5 RETURNING id, nome, cpf, perfil, funcao`;
+            params = [nome, cpf, perfil, funcao || null, id];
+        }
+        const result = await pool.query(query, params);
+        res.json(result.rows[0]);
+    } catch (err) {
+        if(err.code === '23505') return res.status(400).json({error: 'Este CPF já possui cadastro.'});
+        res.status(500).json({ error: 'Erro ao atualizar usuário.' });
+    }
+});
+
+app.delete('/api/usuarios/:id', verificarAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        if (id === '1') return res.status(403).json({ error: 'O usuário principal não pode ser excluído.' });
+        await pool.query('DELETE FROM usuarios WHERE id = $1', [id]);
+        res.json({ message: 'Usuário excluído com sucesso.' });
+    } catch (err) { res.status(500).json({ error: 'Erro ao excluir usuário.' }); }
+});
+
+// =======================================================
+// --- ROTAS DE ESTOQUE (EPIS E MATERIAIS) ---
+// =======================================================
 app.get('/api/epis', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM epis ORDER BY id DESC');
@@ -49,7 +135,6 @@ app.get('/api/epis', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao buscar dados do banco.' }); }
 });
 
-// 💡 BLOQUEIO ADICIONADO AQUI
 app.post('/api/epis', verificarAdmin, async (req, res) => {
     const { codigo_identificacao, nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, estoque_minimo, peso_minimo, estado, bitola, nivel_pacote, voltagem, gas_refrigerante, btu, tecnologia } = req.body;
     try {
@@ -67,7 +152,6 @@ app.post('/api/epis', verificarAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao salvar.' }); }
 });
 
-// 💡 BLOQUEIO ADICIONADO AQUI
 app.put('/api/epis/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     const { codigo_identificacao, nome, categoria, numero_ca, validade_ca, quantidade, peso, comprimento, estoque_minimo, peso_minimo, estado, bitola, nivel_pacote, voltagem, gas_refrigerante, btu, tecnologia } = req.body;
@@ -90,7 +174,6 @@ app.put('/api/epis/:id', verificarAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao atualizar.' }); }
 });
 
-// 💡 BLOQUEIO ADICIONADO AQUI
 app.delete('/api/epis/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     try {
@@ -100,6 +183,9 @@ app.delete('/api/epis/:id', verificarAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao excluir o material.' }); }
 });
 
+// =======================================================
+// --- ROTAS DE COLABORADORES (EQUIPE) ---
+// =======================================================
 app.get('/api/colaboradores', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM colaboradores ORDER BY nome ASC');
@@ -107,7 +193,6 @@ app.get('/api/colaboradores', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao buscar colaboradores.' }); }
 });
 
-// 💡 BLOQUEIO ADICIONADO AQUI
 app.post('/api/colaboradores', verificarAdmin, async (req, res) => {
     const { nome, setor, status } = req.body;
     try {
@@ -117,7 +202,6 @@ app.post('/api/colaboradores', verificarAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao cadastrar colaborador.' }); }
 });
 
-// 💡 BLOQUEIO ADICIONADO AQUI
 app.put('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     const { nome, setor, status } = req.body;
@@ -128,7 +212,6 @@ app.put('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao atualizar colaborador.' }); }
 });
 
-// 💡 BLOQUEIO ADICIONADO AQUI
 app.delete('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     try {
@@ -139,9 +222,11 @@ app.delete('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao excluir o colaborador.' }); }
 });
 
+// =======================================================
+// --- ROTAS DE MOVIMENTAÇÕES (RETIRADAS E DEVOLUÇÕES) ---
+// =======================================================
 app.get('/api/movimentacoes', async (req, res) => {
     try {
-        // 💡 QUERY CORRIGIDA PARA PUXAR DADOS DO COMPRESSOR
         const query = `
             SELECT m.*, c.nome as colaborador_nome, e.nome as material_nome_atual, e.categoria, e.btu, e.gas_refrigerante, e.voltagem, e.tecnologia 
             FROM movimentacoes m
@@ -154,7 +239,7 @@ app.get('/api/movimentacoes', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao buscar movimentações.' }); }
 });
 
-app.post('/api/movimentacoes/retirar', async (req, res) => {
+app.post('/api/movimentacoes/retirar', verificarAdmin, async (req, res) => {
     const { epi_id, colaborador_id, quantidade_retirada, medida_inicial, nome_material_salvo, destino } = req.body;
     try {
         const query = `
@@ -168,7 +253,7 @@ app.post('/api/movimentacoes/retirar', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao registrar retirada.' }); }
 });
 
-app.put('/api/movimentacoes/:id/devolver', async (req, res) => {
+app.put('/api/movimentacoes/:id/devolver', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     const { epi_id, quantidade_retirada, quantidade_devolvida, estado_devolucao, medida_inicial, medida_final, categoria } = req.body;
     
@@ -196,7 +281,7 @@ app.put('/api/movimentacoes/:id/devolver', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao registrar devolução.' }); }
 });
 
-app.delete('/api/movimentacoes/:id', async (req, res) => {
+app.delete('/api/movimentacoes/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         await pool.query('DELETE FROM movimentacoes WHERE id = $1', [id]);
@@ -204,9 +289,11 @@ app.delete('/api/movimentacoes/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao excluir movimentação.' }); }
 });
 
+// =======================================================
+// --- ROTAS DE AGENDAMENTOS ---
+// =======================================================
 app.get('/api/agendamentos', async (req, res) => {
     try {
-        // 💡 QUERY CORRIGIDA PARA PUXAR DADOS DO COMPRESSOR
         const query = `
             SELECT a.*, c.nome as colaborador_nome, e.nome as material_nome_atual, e.categoria, e.peso as peso_atual, e.quantidade as qtd_atual, e.btu, e.gas_refrigerante, e.voltagem, e.tecnologia
             FROM agendamentos a
@@ -219,7 +306,7 @@ app.get('/api/agendamentos', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao buscar agendamentos.' }); }
 });
 
-app.post('/api/agendamentos', async (req, res) => {
+app.post('/api/agendamentos', verificarAdmin, async (req, res) => {
     const { epi_id, colaborador_id, quantidade, data_agendada, destino } = req.body;
     try {
         const query = `
@@ -231,7 +318,7 @@ app.post('/api/agendamentos', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao agendar.' }); }
 });
 
-app.put('/api/agendamentos/:id/confirmar', async (req, res) => {
+app.put('/api/agendamentos/:id/confirmar', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     const { epi_id, colaborador_id, quantidade, epi_nome, medida_inicial, categoria, destino } = req.body;
     
@@ -263,7 +350,7 @@ app.put('/api/agendamentos/:id/confirmar', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao confirmar agendamento.' }); }
 });
 
-app.put('/api/agendamentos/:id/cancelar', async (req, res) => {
+app.put('/api/agendamentos/:id/cancelar', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         await pool.query('UPDATE agendamentos SET status = $1 WHERE id = $2', ['CANCELADO', id]);
@@ -271,7 +358,7 @@ app.put('/api/agendamentos/:id/cancelar', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Erro ao cancelar agendamento.' }); }
 });
 
-app.delete('/api/agendamentos/:id', async (req, res) => {
+app.delete('/api/agendamentos/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         await pool.query('DELETE FROM agendamentos WHERE id = $1', [id]);

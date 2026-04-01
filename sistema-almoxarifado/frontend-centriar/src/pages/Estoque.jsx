@@ -3,13 +3,13 @@ import { Offcanvas } from 'react-bootstrap';
 import api from '../services/api';
 
 const categoriaBadge = {
-    'EPI':            { cls: 'badge-epi',        icon: 'bi-shield-fill-check' },
+    'EPI':            { cls: 'badge-epi',         icon: 'bi-shield-fill-check' },
     'Consumível':     { cls: 'badge-consumivel', icon: 'bi-box-seam-fill' },
     'Ferramenta':     { cls: 'badge-ferramenta', icon: 'bi-wrench-adjustable' },
     'Gás':            { cls: 'badge-gas',        icon: 'bi-fire' },
     'Cobre':          { cls: 'badge-cobre',      icon: 'bi-layers-fill' },
     'Cabo/Mangueira': { cls: 'badge-cabo',       icon: 'bi-plug-fill' },
-    'Compressor':     { cls: 'badge-compressor', icon: 'bi-cpu-fill' }, // 💡 Nova Categoria Adicionada
+    'Compressor':     { cls: 'badge-compressor', icon: 'bi-cpu-fill' }, 
     'Outros':         { cls: 'badge-outros',     icon: 'bi-grid-3x3-gap-fill' },
 };
 
@@ -19,7 +19,6 @@ const estadoInicialForm = {
     id: null, codigo_identificacao: '', nome: '', categoria: 'EPI',
     numero_ca: '', validade_ca: '', quantidade: 1, estoque_minimo: 5,
     peso: '', peso_minimo: '', comprimento: '', bitola: '1/4', estado: 'Novo', nivel_pacote: '',
-    // 💡 Novos campos do Compressor
     btu: '12000', gas_refrigerante: 'R-410A', voltagem: '220V Monofásico', tecnologia: 'Inverter'
 };
 
@@ -38,19 +37,27 @@ const calcularDiasVencimento = (dataIso) => {
     }
 };
 
-export default function Estoque() {
+export default function Estoque({ user }) {
     const [materiais, setMateriais] = useState([]);
     const [busca, setBusca] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState(estadoInicialForm);
     const [categoriaFiltro, setCategoriaFiltro] = useState('');
 
+    // 💡 Adicionado: Trava de Perfil
+    const isAdmin = user?.perfil === 'ADMIN';
+
     const carregarMateriais = () => { api.get('/epis').then(r => setMateriais(r.data)).catch(console.error); };
     useEffect(() => { carregarMateriais(); }, []);
 
-    const abrirPainelNovo = () => { setFormData(estadoInicialForm); setShowForm(true); };
+    const abrirPainelNovo = () => { 
+        if (!isAdmin) return; // Segurança
+        setFormData(estadoInicialForm); 
+        setShowForm(true); 
+    };
 
     const prepararEdicao = (m) => {
+        if (!isAdmin) return; // Segurança
         setFormData({ 
             ...m, validade_ca: m.validade_ca ? m.validade_ca.split('T')[0] : '', 
             bitola: m.bitola || '1/4', estado: m.estado || 'Novo', nivel_pacote: m.nivel_pacote || '',
@@ -60,6 +67,7 @@ export default function Estoque() {
     };
 
     const excluirMaterial = async (id, nome) => {
+        if (!isAdmin) return; // Segurança
         if (window.confirm(`Tem certeza que deseja excluir "${nome}"?\n\nO histórico de quem usou será mantido.`)) {
             try { await api.delete(`/epis/${id}`); carregarMateriais(); } catch (error) { alert('Erro ao excluir.'); }
         }
@@ -69,10 +77,8 @@ export default function Estoque() {
         const { name, value } = e.target;
         let novoForm = { ...formData, [name]: value };
 
-        // Lógica Inteligente: Limpar campos inúteis ao trocar de categoria
         if (name === 'categoria') {
             const baseLimpa = { peso: '', peso_minimo: '', comprimento: '', bitola: '', nivel_pacote: '', btu: '', gas_refrigerante: '', voltagem: '', tecnologia: '' };
-            
             if (value === 'Gás') novoForm = { ...novoForm, ...baseLimpa };
             else if (value === 'Cobre') novoForm = { ...novoForm, ...baseLimpa, bitola: '1/4' };
             else if (value === 'Compressor') novoForm = { ...novoForm, ...baseLimpa, btu: '12000', gas_refrigerante: 'R-410A', voltagem: '220V Monofásico', tecnologia: 'Inverter' };
@@ -94,6 +100,7 @@ export default function Estoque() {
 
     const salvarMaterial = (e) => {
         e.preventDefault();
+        if (!isAdmin) return; // Segurança
         const req = formData.id ? api.put(`/epis/${formData.id}`, formData) : api.post('/epis', formData);
         req.then(() => { setShowForm(false); carregarMateriais(); }).catch(() => alert('Erro ao salvar.'));
     };
@@ -171,7 +178,11 @@ export default function Estoque() {
                             {Object.keys(categoriaBadge).map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                         <div className="search-box"><i className="bi bi-search"></i><input className="search-input" placeholder="Buscar item..." value={busca} onChange={e => setBusca(e.target.value)} /></div>
-                        <button className="btn-primary-custom" onClick={abrirPainelNovo}><i className="bi bi-plus-lg"></i> Novo Item</button>
+                        
+                        {/* 💡 Trava: Botão "Novo Item" só aparece para Admin */}
+                        {isAdmin && (
+                            <button className="btn-primary-custom" onClick={abrirPainelNovo}><i className="bi bi-plus-lg"></i> Novo Item</button>
+                        )}
                     </div>
                 </div>
 
@@ -189,7 +200,6 @@ export default function Estoque() {
                                 const isGasOuCobre = mat.categoria === 'Gás' || mat.categoria === 'Cobre';
                                 const isPacote = !!mat.nivel_pacote;
 
-                                // Lógica de Renderização do C.A.
                                 let textoCA = null;
                                 if (mat.categoria === 'EPI' && mat.numero_ca) {
                                     const diasCA = calcularDiasVencimento(mat.validade_ca);
@@ -205,7 +215,6 @@ export default function Estoque() {
                                     else textoCA = <div className="text-success mt-1"><i className="bi bi-shield-check"></i> C.A.: {mat.numero_ca} (Válido até {dataFormatada})</div>;
                                 }
 
-                                // 💡 Lógica de Renderização do Compressor na Tabela
                                 let textoCompressor = null;
                                 if (mat.categoria === 'Compressor') {
                                     textoCompressor = (
@@ -239,10 +248,15 @@ export default function Estoque() {
                                             </div>
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button className="btn-ghost" onClick={() => prepararEdicao(mat)}><i className="bi bi-pencil-square"></i></button>
-                                                <button className="btn-ghost" style={{ color: '#ef4444' }} onClick={() => excluirMaterial(mat.id, mat.nome)}><i className="bi bi-trash3-fill"></i></button>
-                                            </div>
+                                            {/* 💡 Trava: Botões de ação só aparecem para Admin */}
+                                            {isAdmin ? (
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <button className="btn-ghost" onClick={() => prepararEdicao(mat)}><i className="bi bi-pencil-square"></i></button>
+                                                    <button className="btn-ghost" style={{ color: '#ef4444' }} onClick={() => excluirMaterial(mat.id, mat.nome)}><i className="bi bi-trash3-fill"></i></button>
+                                                </div>
+                                            ) : (
+                                                <span className="badge bg-light text-muted" style={{ fontSize: '10px' }}>Somente Leitura</span>
+                                            )}
                                         </td>
                                     </tr>
                                 );
@@ -267,7 +281,7 @@ export default function Estoque() {
                                     <option value="EPI">Proteção (EPI)</option>
                                     <option value="Consumível">Consumível</option>
                                     <option value="Ferramenta">Ferramenta</option>
-                                    <option value="Compressor">Compressor</option> {/* 💡 Nova Categoria no Dropdown */}
+                                    <option value="Compressor">Compressor</option>
                                     <option value="Gás">Gás / Fluidos</option>
                                     <option value="Cobre">Cobre</option>
                                     <option value="Cabo/Mangueira">Cabo / Mangueira</option>
@@ -280,7 +294,6 @@ export default function Estoque() {
                             </div>
                         </div>
 
-                        {/* 💡 SESSÃO EXCLUSIVA DO COMPRESSOR */}
                         {formData.categoria === 'Compressor' && (
                             <div className="form-highlight" style={{ background: '#f0f9ff', borderColor: '#7dd3fc', marginBottom: '16px' }}>
                                 <label className="form-label-custom text-primary" style={{color: '#0284c7'}}><i className="bi bi-cpu-fill me-1"></i> Especificações Técnicas</label>
@@ -351,7 +364,6 @@ export default function Estoque() {
                             </div>
                         )}
 
-                        {/* Bloco de Quantidades Padrão (Ocultado apenas para Gás e Cobre) */}
                         {formData.categoria !== 'Gás' && formData.categoria !== 'Cobre' && (
                             <div style={{ marginBottom: '16px' }}>
                                 {formData.categoria !== 'Cabo/Mangueira' && formData.categoria !== 'Compressor' && (
