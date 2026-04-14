@@ -1,25 +1,27 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f2027,50:203a43,100:2c5364&height=200&section=header&text=Sistema%20de%20Almoxarifado&fontSize=40&fontColor=ffffff&fontAlignY=38&desc=Centriar%20%E2%80%A2%20Gest%C3%A3o%20Inteligente%20de%20Estoque&descAlignY=58&descSize=16&animation=fadeIn" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f2027,50:203a43,100:2c5364&height=200&section=header&text=Sistema%20de%20Almoxarifado&fontSize=40&fontColor=ffffff&fontAlignY=38&desc=Centriar%20%E2%80%A2%20Gest%C3%A3o%20Inteligente%20de%20Estoque&descAlignY=58&descSize=16&animation=fadeIn" width="100%"/>
 
 <br/>
 
-[![Status](https://img.shields.io/badge/status-em%20desenvolvimento-f59e0b?style=for-the-badge&logo=github&logoColor=white)](https://github.com)
-[![Version](https://img.shields.io/badge/vers%C3%A3o-1.0.0-3b82f6?style=for-the-badge&logo=semver&logoColor=white)](https://github.com)
-[![License](https://img.shields.io/badge/licen%C3%A7a-MIT-10b981?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](./LICENSE)
-[![Made with Love](https://img.shields.io/badge/feito%20com-%E2%9D%A4-ef4444?style=for-the-badge)](https://github.com)
+[![Status](https://img.shields.io/badge/status-em%20desenvolvimento-f59e0b?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Anderson-Fontes/Sistema-de-Almoxarifado---Centriar)
+[![Version](https://img.shields.io/badge/vers%C3%A3o-1.0.0-3b82f6?style=for-the-badge)](https://github.com/Anderson-Fontes/Sistema-de-Almoxarifado---Centriar)
+[![Feito com dedicação](https://img.shields.io/badge/feito%20com-%E2%9D%A4-ef4444?style=for-the-badge)](https://github.com/Anderson-Fontes)
 
 <br/>
 
 [![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
 [![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://reactjs.org)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/pt-BR/docs/Web/JavaScript)
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)](https://developer.mozilla.org/pt-BR/docs/Web/HTML)
+[![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)](https://developer.mozilla.org/pt-BR/docs/Web/CSS)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com)
+[![pgAdmin](https://img.shields.io/badge/pgAdmin-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.pgadmin.org)
 
 <br/>
 
-> **Plataforma completa para gestão de almoxarifado e controle de estoque.**  
+> **Plataforma completa para gestão de almoxarifado e controle de estoque.**
 > Desenvolvida com foco em organização, rastreabilidade e eficiência operacional.
 
 <br/>
@@ -43,8 +45,9 @@
 - [📂 Estrutura do Projeto](#-estrutura-do-projeto)
 - [⚙️ Como Executar](#️-como-executar)
 - [🌐 Padrão de API](#-padrão-de-api)
+- [🗄️ Banco de Dados](#️-banco-de-dados)
 - [📊 Boas Práticas](#-boas-práticas-e-conceitos)
-- [📄 Licença](#-licença)
+- [🚧 Roadmap](#-roadmap)
 - [👨‍💻 Autor](#-autor)
 
 </details>
@@ -55,18 +58,19 @@
 
 ## 📖 Visão Geral
 
-<img align="right" width="340" src="https://media.giphy.com/media/qgQUggAC3Pfv687qPC/giphy.gif" />
+<img align="right" width="320" src="https://media.giphy.com/media/qgQUggAC3Pfv687qPC/giphy.gif" />
 
-O **Sistema de Almoxarifado - Centriar** é uma aplicação **full stack** desenvolvida para gerenciar de forma eficiente o controle de materiais, entradas, saídas e organização de estoque.
+O **Sistema de Almoxarifado — Centriar** é uma aplicação **full stack** desenvolvida para gerenciar de forma eficiente o controle de materiais, movimentações de estoque e organização de recursos de uma instituição.
 
 A solução foi projetada para atender **cenários reais de gestão**, garantindo:
 
-- ✅ Maior **confiabilidade** nos dados
-- ✅ Redução de **erros operacionais**
-- ✅ Melhoria nos **processos internos**
-- ✅ **Rastreabilidade** completa de materiais
+- ✅ Maior **confiabilidade** nos dados cadastrados
+- ✅ Redução de **erros operacionais** no dia a dia
+- ✅ Melhoria nos **processos internos** de almoxarifado
+- ✅ **Rastreabilidade** completa de entradas e saídas
+- ✅ **Acesso rápido** ao histórico de movimentações
 
-Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o fluxo de materiais, desde o cadastro até os relatórios analíticos, tudo integrado em uma única plataforma.
+Com uma interface moderna e responsiva construída em React, integrada a uma API REST em Node.js e banco de dados PostgreSQL, o sistema oferece controle total sobre o fluxo de materiais em uma única plataforma.
 
 <br clear="right"/>
 
@@ -78,11 +82,12 @@ Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o 
 
 | 🎯 Objetivo | 📋 Descrição |
 |---|---|
-| **Centralização** | Unificar todo o controle de estoque em uma plataforma |
-| **Automação** | Automatizar processos de entrada e saída de materiais |
+| **Centralização** | Unificar todo o controle de estoque em uma única plataforma |
+| **Automação** | Automatizar registros de entrada e saída de materiais |
 | **Rastreabilidade** | Garantir histórico completo de todas as movimentações |
-| **Análise** | Facilitar consultas, filtros e análises de dados |
+| **Análise** | Facilitar consultas, filtros e análises do estoque |
 | **Eficiência** | Melhorar a produtividade e reduzir erros operacionais |
+| **Segurança** | Controle de acesso com autenticação de usuários |
 
 </div>
 
@@ -90,45 +95,56 @@ Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o 
 
 ## ✨ Funcionalidades
 
-<div align="center">
-<img src="https://media.giphy.com/media/26tn33aiTi1jkl6H6/giphy.gif" width="300" />
-</div>
-
-<br/>
-
 <table>
   <tr>
     <td align="center" width="33%">
-      <h3>📦</h3>
-      <b>Gestão de Produtos</b><br/>
-      Cadastro completo com categorias, códigos e descrições detalhadas
+      <h3>📋</h3>
+      <b>Cadastro de Produtos</b><br/>
+      Registro completo de materiais com código, descrição, categoria e unidade de medida
     </td>
     <td align="center" width="33%">
-      <h3>🔄</h3>
-      <b>Movimentações</b><br/>
-      Controle preciso de entradas e saídas com rastreabilidade total
+      <h3>⬆️</h3>
+      <b>Entrada de Materiais</b><br/>
+      Registro de recebimentos com data, quantidade, origem e responsável
     </td>
     <td align="center" width="33%">
-      <h3>📊</h3>
-      <b>Estoque em Tempo Real</b><br/>
-      Monitoramento live com alertas de níveis críticos
+      <h3>⬇️</h3>
+      <b>Saída de Materiais</b><br/>
+      Controle de retiradas com identificação do solicitante e finalidade
     </td>
   </tr>
   <tr>
+    <td align="center" width="33%">
+      <h3>📦</h3>
+      <b>Controle de Estoque</b><br/>
+      Visão em tempo real da quantidade disponível de cada item cadastrado
+    </td>
     <td align="center" width="33%">
       <h3>🔎</h3>
       <b>Busca Avançada</b><br/>
       Filtros inteligentes e consultas rápidas por múltiplos critérios
     </td>
     <td align="center" width="33%">
+      <h3>🧾</h3>
+      <b>Histórico de Movimentações</b><br/>
+      Log completo de todas as transações realizadas no sistema
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
       <h3>⚡</h3>
       <b>API REST</b><br/>
-      Integração completa com endpoints padronizados e documentados
+      Endpoints padronizados para integração completa entre frontend e backend
     </td>
     <td align="center" width="33%">
       <h3>🧭</h3>
       <b>Interface Responsiva</b><br/>
-      Design intuitivo adaptado para desktop e dispositivos móveis
+      Design moderno construído em React, adaptado para desktop e mobile
+    </td>
+    <td align="center" width="33%">
+      <h3>📊</h3>
+      <b>Dashboard Gerencial</b><br/>
+      Visão consolidada do almoxarifado para tomada de decisão rápida
     </td>
   </tr>
 </table>
@@ -139,24 +155,24 @@ Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o 
 
 <div align="center">
 
-```
 ┌─────────────────────────────────────────────────────────┐
-│                    🌐 CLIENT LAYER                       │
-│               React + JavaScript + Axios                 │
+│                    🌐 CLIENT LAYER                      │
+│              React + JavaScript + CSS3 + Axios           │
 └──────────────────────────┬──────────────────────────────┘
-                           │  HTTP / REST
-                           ▼
+│  HTTP / REST
+▼
 ┌─────────────────────────────────────────────────────────┐
-│                    ⚙️  API LAYER                          │
-│              Node.js + Express + Controllers             │
+│                    ⚙️  API LAYER                        │
+│              Node.js + Express + Controllers            │
+│         Autenticação · Validações · Regras de Negócio   │
 └──────────────────────────┬──────────────────────────────┘
-                           │  SQL Queries
-                           ▼
+│  SQL Queries
+▼
 ┌─────────────────────────────────────────────────────────┐
-│                  🗄️  DATABASE LAYER                       │
-│                      PostgreSQL                          │
+│                  🗄️  DATABASE LAYER                      │
+│              PostgreSQL — gerenciado via pgAdmin         │
+│         Produtos · Movimentações · Usuários              │
 └─────────────────────────────────────────────────────────┘
-```
 
 </div>
 
@@ -169,12 +185,13 @@ Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o 
 
 <br/>
 
-| Tecnologia | Versão | Uso |
-|---|---|---|
-| ![React](https://img.shields.io/badge/-React-20232A?logo=react&logoColor=61DAFB) | 18+ | Biblioteca de UI |
-| ![JavaScript](https://img.shields.io/badge/-JavaScript-F7DF1E?logo=javascript&logoColor=black) | ES6+ | Linguagem principal |
-| ![Styled Components](https://img.shields.io/badge/-Styled%20Components-DB7093?logo=styled-components&logoColor=white) | Latest | Estilização |
-| ![Axios](https://img.shields.io/badge/-Axios-5A29E4?logo=axios&logoColor=white) | Latest | Requisições HTTP |
+| Tecnologia | Uso |
+|---|---|
+| ![React](https://img.shields.io/badge/-React-20232A?logo=react&logoColor=61DAFB) | Biblioteca principal de UI |
+| ![JavaScript](https://img.shields.io/badge/-JavaScript-F7DF1E?logo=javascript&logoColor=black) | Linguagem principal |
+| ![HTML5](https://img.shields.io/badge/-HTML5-E34F26?logo=html5&logoColor=white) | Estrutura das páginas |
+| ![CSS3](https://img.shields.io/badge/-CSS3-1572B6?logo=css3&logoColor=white) | Estilização e layout |
+| ![Axios](https://img.shields.io/badge/-Axios-5A29E4?logo=axios&logoColor=white) | Requisições HTTP para a API |
 
 </details>
 
@@ -183,11 +200,11 @@ Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o 
 
 <br/>
 
-| Tecnologia | Versão | Uso |
-|---|---|---|
-| ![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white) | 20+ | Runtime JavaScript |
-| ![Express](https://img.shields.io/badge/-Express-000000?logo=express&logoColor=white) | 4+ | Framework web |
-| ![JavaScript](https://img.shields.io/badge/-JavaScript-F7DF1E?logo=javascript&logoColor=black) | ES6+ | Linguagem principal |
+| Tecnologia | Uso |
+|---|---|
+| ![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white) | Runtime JavaScript server-side |
+| ![Express](https://img.shields.io/badge/-Express-000000?logo=express&logoColor=white) | Framework web e roteamento da API |
+| ![JavaScript](https://img.shields.io/badge/-JavaScript-F7DF1E?logo=javascript&logoColor=black) | Linguagem principal do servidor |
 
 </details>
 
@@ -199,6 +216,7 @@ Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o 
 | Tecnologia | Uso |
 |---|---|
 | ![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-316192?logo=postgresql&logoColor=white) | Banco de dados relacional principal |
+| ![pgAdmin](https://img.shields.io/badge/-pgAdmin-336791?logo=postgresql&logoColor=white) | Interface gráfica de administração do banco |
 
 </details>
 
@@ -211,7 +229,7 @@ Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o 
 |---|---|
 | ![Git](https://img.shields.io/badge/-Git-F05032?logo=git&logoColor=white) | Controle de versão |
 | ![GitHub](https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white) | Hospedagem do repositório |
-| ![Leaflet](https://img.shields.io/badge/-Leaflet-199900?logo=leaflet&logoColor=white) | Mapas interativos (quando aplicável) |
+| ![Vite](https://img.shields.io/badge/-Vite-646CFF?logo=vite&logoColor=white) | Bundler e servidor de desenvolvimento React |
 
 </details>
 
@@ -221,15 +239,18 @@ Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o 
 
 ```bash
 📦 Sistema-de-Almoxarifado---Centriar
- ┃
+ │
  ┣ 📂 backend
  ┃ ┣ 📄 server.js           # Ponto de entrada do servidor Express + rotas
  ┃ ┗ 📄 database.js         # Configuração e conexão com o PostgreSQL
  ┃
  ┣ 📂 frontend
- ┃ ┣ 📂 pages              # Páginas da aplicação
- ┃ ┣ 📂 services           # Camada de comunicação com a API
- ┃ ┗ 📄 App.jsx            # Componente raiz da aplicação React
+ ┃ ┣ 📂 src
+ ┃ ┃ ┣ 📂 pages             # Páginas da aplicação (React)
+ ┃ ┃ ┣ 📂 components        # Componentes reutilizáveis
+ ┃ ┃ ┣ 📂 services          # Camada de comunicação com a API (Axios)
+ ┃ ┃ ┗ 📄 App.jsx           # Componente raiz da aplicação
+ ┃ ┗ 📄 index.html          # HTML base do Vite
  ┃
  ┗ 📄 README.md
 ```
@@ -238,31 +259,49 @@ Com uma interface moderna e intuitiva, o sistema oferece controle total sobre o 
 
 ## ⚙️ Como Executar
 
-> ⚠️ **Pré-requisitos:** [Node.js](https://nodejs.org) 20+, [PostgreSQL](https://www.postgresql.org) e [Git](https://git-scm.com)
+> ⚠️ **Pré-requisitos:** [Node.js](https://nodejs.org) 20+, [PostgreSQL](https://www.postgresql.org), [pgAdmin](https://www.pgadmin.org) e [Git](https://git-scm.com)
 
 ### 1️⃣ Clone o repositório
 
 ```bash
-git clone https://github.com/seu-usuario/Sistema-de-Almoxarifado---Centriar.git
+git clone https://github.com/Anderson-Fontes/Sistema-de-Almoxarifado---Centriar.git
 cd Sistema-de-Almoxarifado---Centriar
 ```
 
-### 2️⃣ Execute o Backend
+### 2️⃣ Configure o banco de dados
+
+1. Abra o **pgAdmin** e crie um banco de dados chamado `almoxarifado`
+2. Execute o script SQL de criação das tabelas localizado na pasta do projeto
+
+### 3️⃣ Configure as variáveis de ambiente do Backend
+
+Crie um arquivo `.env` dentro da pasta `backend/`:
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=sua_senha
+DB_NAME=almoxarifado
+PORT=3333
+```
+
+### 4️⃣ Execute o Backend
 
 ```bash
 cd backend
-npm install       # Instala as dependências
-npm start         # Inicia o servidor
+npm install
+npm start
 ```
 
 > 🟢 API disponível em: `http://localhost:3333`
 
-### 3️⃣ Execute o Frontend
+### 5️⃣ Execute o Frontend
 
 ```bash
 cd frontend
-npm install       # Instala as dependências
-npm run dev       # Inicia o servidor de desenvolvimento
+npm install
+npm run dev
 ```
 
 > 🟢 Interface disponível em: `http://localhost:5173`
@@ -279,11 +318,13 @@ npm run dev       # Inicia o servidor de desenvolvimento
 | ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/produtos` | Cadastra um novo produto |
 | ![PUT](https://img.shields.io/badge/-PUT-fca130?style=flat-square) | `/produtos/:id` | Atualiza um produto existente |
 | ![DELETE](https://img.shields.io/badge/-DELETE-f93e3e?style=flat-square) | `/produtos/:id` | Remove um produto |
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/movimentacoes` | Lista o histórico de movimentações |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/movimentacoes` | Registra entrada ou saída de material |
 
 </div>
 
 <details>
-<summary><b>📌 Exemplo de payload</b></summary>
+<summary><b>📌 Exemplo de payload — Produto</b></summary>
 
 <br/>
 
@@ -300,27 +341,80 @@ npm run dev       # Inicia o servidor de desenvolvimento
 
 </details>
 
+<details>
+<summary><b>📌 Exemplo de payload — Movimentação</b></summary>
+
+<br/>
+
+```json
+{
+  "produto_id": 1,
+  "tipo": "entrada",
+  "quantidade": 100,
+  "observacao": "Recebimento de fornecedor",
+  "data": "2026-04-14"
+}
+```
+
+</details>
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
+
+## 🗄️ Banco de Dados
+
+O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado via **pgAdmin**. O modelo é composto pelas seguintes entidades principais:
+
+<div align="center">
+
+┌──────────────┐       ┌──────────────────┐       ┌──────────────┐
+│   produtos   │       │  movimentacoes   │       │   usuarios   │
+│──────────────│       │──────────────────│       │──────────────│
+│ id           │◄──────│ produto_id       │       │ id           │
+│ nome         │       │ tipo (entrada/   │       │ nome         │
+│ codigo       │       │       saida)     │       │ email        │
+│ categoria    │       │ quantidade       │       │ senha_hash   │
+│ quantidade   │       │ observacao       │       │ criado_em    │
+│ unidade      │       │ data             │       └──────────────┘
+│ localizacao  │       │ criado_em        │
+│ criado_em    │       └──────────────────┘
+└──────────────┘
+
+</div>
+
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
 
 ## 📊 Boas Práticas e Conceitos
 
 <div align="center">
 
-```
-  ╔══════════════════╗    ╔══════════════════╗    ╔══════════════════╗
-  ║   RESTful API    ║    ║  Arquitetura MVC  ║    ║   JavaScript     ║
-  ║  Padronização    ║    ║  Separação de     ║    ║  Código limpo    ║
-  ║  de endpoints    ║    ║ responsabilidades ║    ║  e organizado    ║
-  ╚══════════════════╝    ╚══════════════════╝    ╚══════════════════╝
-
-  ╔══════════════════╗    ╔══════════════════╗
-  ║  Modularidade    ║    ║   Integração     ║
-  ║  Organização     ║    ║  Frontend ↔ API  ║
-  ║  escalável       ║    ║  eficiente       ║
-  ╚══════════════════╝    ╚══════════════════╝
-```
+╔══════════════════╗    ╔══════════════════╗    ╔══════════════════╗
+║   RESTful API    ║    ║  Arquitetura MVC  ║    ║  Código Limpo    ║
+║  Padronização    ║    ║  Separação clara  ║    ║  Organizado e    ║
+║  de endpoints    ║    ║ de responsabili-  ║    ║  modularizado    ║
+║                  ║    ║     dades         ║    ║                  ║
+╚══════════════════╝    ╚══════════════════╝    ╚══════════════════╝
+╔══════════════════╗    ╔══════════════════╗    ╔══════════════════╗
+║  Componentização ║    ║   Integração     ║    ║  Variáveis de    ║
+║  React com       ║    ║  Frontend ↔ API  ║    ║  Ambiente com    ║
+║  reuso de UI     ║    ║  via Axios       ║    ║     .env         ║
+╚══════════════════╝    ╚══════════════════╝    ╚══════════════════╝
 
 </div>
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
+
+## 🚧 Roadmap
+
+- [x] Cadastro de produtos
+- [x] Controle de estoque
+- [x] Registro de movimentações (entrada e saída)
+- [x] Consulta e filtragem de produtos
+- [x] Integração frontend ↔ API REST
+- [ ] Autenticação com JWT
+- [ ] Relatórios exportáveis em PDF/Excel
+- [ ] Alertas automáticos de estoque mínimo
+- [ ] Dashboard com gráficos e indicadores
+- [ ] Deploy em produção
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
 
@@ -330,22 +424,9 @@ npm run dev       # Inicia o servidor de desenvolvimento
 
 ![Status Badge](https://img.shields.io/badge/%F0%9F%9F%A1%20Status-Em%20Desenvolvimento-f59e0b?style=for-the-badge)
 
-<img src="https://media.giphy.com/media/du3J3cXyzhj75IOgvA/giphy.gif" width="200"/>
-
 **O sistema está em evolução contínua**, com melhorias estruturais e novas funcionalidades sendo implementadas regularmente. Contribuições e feedbacks são sempre bem-vindos!
 
 </div>
-
-<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
-
-## 📄 Licença
-
-Este projeto está sob a licença **MIT**. Veja o arquivo [LICENSE](./LICENSE) para mais detalhes.
-
-```
-MIT License — Você pode usar, copiar, modificar e distribuir este software
-desde que mantenha o aviso de copyright original.
-```
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
 
@@ -369,7 +450,7 @@ desde que mantenha o aviso de copyright original.
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:2c5364,50:203a43,100:0f2027&height=120&section=footer" width="100%"/>
 
-**Centriar © 2026 • Sistema de Almoxarifado**  
+**Centriar © 2026 • Sistema de Almoxarifado**
 *Desenvolvido com foco em performance, escalabilidade e organização.*
 
 </div>
