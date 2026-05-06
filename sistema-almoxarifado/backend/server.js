@@ -34,6 +34,7 @@ app.post('/api/login', async (req, res) => {
             } 
         });
     } catch (err) { 
+        console.error("Erro no login:", err);
         res.status(500).json({ error: 'Erro no servidor' }); 
     }
 });
@@ -62,20 +63,19 @@ const verificarAdmin = (req, res, next) => {
 // =======================================================
 app.get('/api/usuarios', verificarAdmin, async (req, res) => {
     try {
-        // 💡 REGRA DE VISIBILIDADE MÁXIMA PARA O SUPER ADMIN (ID 1)
         if (req.usuarioToken.id === 1) {
-            // O Super Admin recebe TODOS os usuários e TODAS as senhas
             const query = 'SELECT id, nome, cpf, perfil, funcao, senha FROM usuarios ORDER BY id ASC';
             const result = await pool.query(query);
             return res.json(result.rows);
         } else {
-            // 💡 REGRA PARA ADMINS NORMAIS
-            // Um Admin normal NÃO recebe senhas e NÃO VÊ o Super Admin (id != 1)
             const query = 'SELECT id, nome, cpf, perfil, funcao FROM usuarios WHERE id != 1 ORDER BY nome ASC';
             const result = await pool.query(query);
             return res.json(result.rows);
         }
-    } catch (err) { res.status(500).json({ error: 'Erro ao buscar usuários.' }); }
+    } catch (err) { 
+        console.error("Erro ao buscar usuários:", err);
+        res.status(500).json({ error: 'Erro ao buscar usuários.' }); 
+    }
 });
 
 app.post('/api/usuarios', verificarAdmin, async (req, res) => {
@@ -86,6 +86,7 @@ app.post('/api/usuarios', verificarAdmin, async (req, res) => {
         res.json(result.rows[0]);
     } catch (err) {
         if(err.code === '23505') return res.status(400).json({error: 'Este CPF já possui cadastro.'});
+        console.error("Erro ao cadastrar usuário:", err);
         res.status(500).json({ error: 'Erro ao cadastrar usuário.' });
     }
 });
@@ -94,7 +95,6 @@ app.put('/api/usuarios/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     const { nome, cpf, senha, perfil, funcao } = req.body;
     
-    // 💡 Proteção extra: Um admin normal não pode alterar os dados do Super Admin (via Postman, por exemplo)
     if (id === '1' && req.usuarioToken.id !== 1) {
         return res.status(403).json({ error: 'Você não tem permissão para alterar o Super Admin.' });
     }
@@ -112,6 +112,7 @@ app.put('/api/usuarios/:id', verificarAdmin, async (req, res) => {
         res.json(result.rows[0]);
     } catch (err) {
         if(err.code === '23505') return res.status(400).json({error: 'Este CPF já possui cadastro.'});
+        console.error("Erro ao atualizar usuário:", err);
         res.status(500).json({ error: 'Erro ao atualizar usuário.' });
     }
 });
@@ -122,7 +123,10 @@ app.delete('/api/usuarios/:id', verificarAdmin, async (req, res) => {
         if (id === '1') return res.status(403).json({ error: 'O usuário principal não pode ser excluído.' });
         await pool.query('DELETE FROM usuarios WHERE id = $1', [id]);
         res.json({ message: 'Usuário excluído com sucesso.' });
-    } catch (err) { res.status(500).json({ error: 'Erro ao excluir usuário.' }); }
+    } catch (err) { 
+        console.error("Erro ao excluir usuário:", err);
+        res.status(500).json({ error: 'Erro ao excluir usuário.' }); 
+    }
 });
 
 // =======================================================
@@ -132,7 +136,10 @@ app.get('/api/epis', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM epis ORDER BY id DESC');
         res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Erro ao buscar dados do banco.' }); }
+    } catch (err) { 
+        console.error("Erro ao buscar epis:", err);
+        res.status(500).json({ error: 'Erro ao buscar dados do banco.' }); 
+    }
 });
 
 app.post('/api/epis', verificarAdmin, async (req, res) => {
@@ -149,7 +156,10 @@ app.post('/api/epis', verificarAdmin, async (req, res) => {
             voltagem || null, gas_refrigerante || null, btu || null, tecnologia || null
         ]);
         res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: 'Erro ao salvar.' }); }
+    } catch (err) { 
+        console.error("Erro ao salvar epi:", err);
+        res.status(500).json({ error: 'Erro ao salvar.' }); 
+    }
 });
 
 app.put('/api/epis/:id', verificarAdmin, async (req, res) => {
@@ -171,16 +181,23 @@ app.put('/api/epis/:id', verificarAdmin, async (req, res) => {
             voltagem || null, gas_refrigerante || null, btu || null, tecnologia || null, id
         ]);
         res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: 'Erro ao atualizar.' }); }
+    } catch (err) { 
+        console.error("Erro ao atualizar epi:", err);
+        res.status(500).json({ error: 'Erro ao atualizar.' }); 
+    }
 });
 
 app.delete('/api/epis/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         await pool.query('UPDATE movimentacoes SET epi_id = NULL WHERE epi_id = $1', [id]);
+        await pool.query('UPDATE agendamentos SET epi_id = NULL WHERE epi_id = $1', [id]);
         await pool.query('DELETE FROM epis WHERE id = $1', [id]);
         res.json({ message: 'Material excluído com sucesso.' });
-    } catch (err) { res.status(500).json({ error: 'Erro ao excluir o material.' }); }
+    } catch (err) { 
+        console.error("🔥 ERRO AO DELETAR EPI:", err);
+        res.status(500).json({ error: 'Erro ao excluir o material.' }); 
+    }
 });
 
 // =======================================================
@@ -190,7 +207,10 @@ app.get('/api/colaboradores', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM colaboradores ORDER BY nome ASC');
         res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Erro ao buscar colaboradores.' }); }
+    } catch (err) { 
+        console.error("Erro ao buscar colaboradores:", err);
+        res.status(500).json({ error: 'Erro ao buscar colaboradores.' }); 
+    }
 });
 
 app.post('/api/colaboradores', verificarAdmin, async (req, res) => {
@@ -199,7 +219,10 @@ app.post('/api/colaboradores', verificarAdmin, async (req, res) => {
         const query = `INSERT INTO colaboradores (nome, setor, status) VALUES ($1, $2, $3) RETURNING *`;
         const result = await pool.query(query, [nome, setor, status || 'Ativo']);
         res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: 'Erro ao cadastrar colaborador.' }); }
+    } catch (err) { 
+        console.error("Erro ao cadastrar colaborador:", err);
+        res.status(500).json({ error: 'Erro ao cadastrar colaborador.' }); 
+    }
 });
 
 app.put('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
@@ -209,7 +232,10 @@ app.put('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
         const query = `UPDATE colaboradores SET nome = $1, setor = $2, status = $3 WHERE id = $4 RETURNING *`;
         const result = await pool.query(query, [nome, setor, status, id]);
         res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: 'Erro ao atualizar colaborador.' }); }
+    } catch (err) { 
+        console.error("Erro ao atualizar colaborador:", err);
+        res.status(500).json({ error: 'Erro ao atualizar colaborador.' }); 
+    }
 });
 
 app.delete('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
@@ -217,9 +243,13 @@ app.delete('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
     try {
         await pool.query('UPDATE movimentacoes SET colaborador_id = NULL WHERE colaborador_id = $1', [id]);
         await pool.query('UPDATE agendamentos SET colaborador_id = NULL WHERE colaborador_id = $1', [id]);
+        await pool.query('UPDATE registros_ficha_epi SET colaborador_id = NULL WHERE colaborador_id = $1', [id]);
         await pool.query('DELETE FROM colaboradores WHERE id = $1', [id]);
         res.json({ message: 'Colaborador excluído com sucesso.' });
-    } catch (err) { res.status(500).json({ error: 'Erro ao excluir o colaborador.' }); }
+    } catch (err) { 
+        console.error("Erro ao excluir colaborador:", err);
+        res.status(500).json({ error: 'Erro ao excluir o colaborador.' }); 
+    }
 });
 
 // =======================================================
@@ -236,7 +266,10 @@ app.get('/api/movimentacoes', async (req, res) => {
         `;
         const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Erro ao buscar movimentações.' }); }
+    } catch (err) { 
+        console.error("Erro ao buscar movimentacoes:", err);
+        res.status(500).json({ error: 'Erro ao buscar movimentações.' }); 
+    }
 });
 
 app.post('/api/movimentacoes/retirar', verificarAdmin, async (req, res) => {
@@ -250,7 +283,10 @@ app.post('/api/movimentacoes/retirar', verificarAdmin, async (req, res) => {
         
         await pool.query('UPDATE epis SET quantidade = quantidade - $1 WHERE id = $2', [quantidade_retirada, epi_id]);
         res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: 'Erro ao registrar retirada.' }); }
+    } catch (err) { 
+        console.error("Erro ao retirar movimentacao:", err);
+        res.status(500).json({ error: 'Erro ao registrar retirada.' }); 
+    }
 });
 
 app.put('/api/movimentacoes/:id/devolver', verificarAdmin, async (req, res) => {
@@ -278,7 +314,10 @@ app.put('/api/movimentacoes/:id/devolver', verificarAdmin, async (req, res) => {
         `;
         const result = await pool.query(query, [medida_final || null, consumo, id]);
         res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: 'Erro ao registrar devolução.' }); }
+    } catch (err) { 
+        console.error("Erro ao devolver movimentacao:", err);
+        res.status(500).json({ error: 'Erro ao registrar devolução.' }); 
+    }
 });
 
 app.delete('/api/movimentacoes/:id', verificarAdmin, async (req, res) => {
@@ -286,7 +325,10 @@ app.delete('/api/movimentacoes/:id', verificarAdmin, async (req, res) => {
     try {
         await pool.query('DELETE FROM movimentacoes WHERE id = $1', [id]);
         res.json({ message: 'Registro excluído.' });
-    } catch (err) { res.status(500).json({ error: 'Erro ao excluir movimentação.' }); }
+    } catch (err) { 
+        console.error("Erro ao excluir movimentacao:", err);
+        res.status(500).json({ error: 'Erro ao excluir movimentação.' }); 
+    }
 });
 
 // =======================================================
@@ -303,7 +345,10 @@ app.get('/api/agendamentos', async (req, res) => {
         `;
         const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Erro ao buscar agendamentos.' }); }
+    } catch (err) { 
+        console.error("Erro ao buscar agendamentos:", err);
+        res.status(500).json({ error: 'Erro ao buscar agendamentos.' }); 
+    }
 });
 
 app.post('/api/agendamentos', verificarAdmin, async (req, res) => {
@@ -315,7 +360,10 @@ app.post('/api/agendamentos', verificarAdmin, async (req, res) => {
         `;
         const result = await pool.query(query, [colaborador_id, epi_id, quantidade, data_agendada, destino || 'Uso Contínuo']);
         res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: 'Erro ao agendar.' }); }
+    } catch (err) { 
+        console.error("Erro ao agendar:", err);
+        res.status(500).json({ error: 'Erro ao agendar.' }); 
+    }
 });
 
 app.put('/api/agendamentos/:id/confirmar', verificarAdmin, async (req, res) => {
@@ -347,7 +395,10 @@ app.put('/api/agendamentos/:id/confirmar', verificarAdmin, async (req, res) => {
         }
 
         res.json({ message: 'Retirada confirmada com sucesso!' });
-    } catch (err) { res.status(500).json({ error: 'Erro ao confirmar agendamento.' }); }
+    } catch (err) { 
+        console.error("Erro ao confirmar agendamento:", err);
+        res.status(500).json({ error: 'Erro ao confirmar agendamento.' }); 
+    }
 });
 
 app.put('/api/agendamentos/:id/cancelar', verificarAdmin, async (req, res) => {
@@ -355,7 +406,10 @@ app.put('/api/agendamentos/:id/cancelar', verificarAdmin, async (req, res) => {
     try {
         await pool.query('UPDATE agendamentos SET status = $1 WHERE id = $2', ['CANCELADO', id]);
         res.json({ message: 'Agendamento cancelado.' });
-    } catch (err) { res.status(500).json({ error: 'Erro ao cancelar agendamento.' }); }
+    } catch (err) { 
+        console.error("Erro ao cancelar agendamento:", err);
+        res.status(500).json({ error: 'Erro ao cancelar agendamento.' }); 
+    }
 });
 
 app.delete('/api/agendamentos/:id', verificarAdmin, async (req, res) => {
@@ -363,7 +417,119 @@ app.delete('/api/agendamentos/:id', verificarAdmin, async (req, res) => {
     try {
         await pool.query('DELETE FROM agendamentos WHERE id = $1', [id]);
         res.json({ message: 'Agendamento excluído.' });
-    } catch (err) { res.status(500).json({ error: 'Erro ao excluir agendamento.' }); }
+    } catch (err) { 
+        console.error("Erro ao excluir agendamento:", err);
+        res.status(500).json({ error: 'Erro ao excluir agendamento.' }); 
+    }
+});
+
+// =======================================================
+// --- ROTAS DA FICHA DE EPI ---
+// =======================================================
+
+// 1. Buscar a Ficha de EPI completa de UM colaborador específico
+app.get('/api/fichas-epi/colaborador/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const query = `
+            SELECT f.*, e.nome as epi_nome, e.categoria 
+            FROM registros_ficha_epi f
+            LEFT JOIN epis e ON f.epi_id = e.id
+            WHERE f.colaborador_id = $1
+            ORDER BY f.data_retirada DESC
+        `;
+        const result = await pool.query(query, [id]);
+        res.json(result.rows);
+    } catch (err) { 
+        console.error("Erro ao buscar ficha de EPI:", err);
+        res.status(500).json({ error: 'Erro ao buscar ficha do colaborador.' }); 
+    }
+});
+
+// 2. Adicionar um novo item na Ficha do Colaborador (Entregar EPI)
+app.post('/api/fichas-epi', verificarAdmin, async (req, res) => {
+    const { colaborador_id, epi_id, nome_manual, ca_registrado, data_retirada, data_vencimento, proxima_troca, quantidade, observacoes } = req.body;
+    
+    const epiIdTratado = epi_id ? epi_id : null;
+
+    try {
+        const query = `
+            INSERT INTO registros_ficha_epi 
+            (colaborador_id, epi_id, nome_manual, ca_registrado, data_retirada, data_vencimento, proxima_troca, quantidade, observacoes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
+        `;
+        const result = await pool.query(query, [
+            colaborador_id, 
+            epiIdTratado, 
+            nome_manual || null, 
+            ca_registrado, 
+            data_retirada, 
+            data_vencimento || null, 
+            proxima_troca || null, 
+            quantidade || 1, 
+            observacoes || ''
+        ]);
+        
+        if (epiIdTratado) {
+            await pool.query('UPDATE epis SET quantidade = quantidade - $1 WHERE id = $2', [quantidade || 1, epiIdTratado]);
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) { 
+        console.error("Erro ao registrar EPI na ficha:", err);
+        res.status(500).json({ error: 'Erro ao adicionar item na ficha.' }); 
+    }
+});
+
+// 3. Atualizar um item da Ficha do Colaborador (Editar) - 🔥 CORRIGIDO!
+app.put('/api/fichas-epi/:id', verificarAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { epi_id, nome_manual, ca_registrado, data_retirada, data_vencimento, proxima_troca, quantidade, observacoes } = req.body;
+    
+    // Tratamos o ID: se for string vazia, vira null para o Postgres aceitar
+    const epiIdTratado = epi_id ? epi_id : null;
+
+    try {
+        const query = `
+            UPDATE registros_ficha_epi 
+            SET epi_id = $1, 
+                nome_manual = $2, 
+                ca_registrado = $3, 
+                data_retirada = $4, 
+                data_vencimento = $5, 
+                proxima_troca = $6, 
+                quantidade = $7, 
+                observacoes = $8
+            WHERE id = $9 RETURNING *
+        `;
+        const result = await pool.query(query, [
+            epiIdTratado, 
+            nome_manual || null, 
+            ca_registrado, 
+            data_retirada, 
+            data_vencimento || null, 
+            proxima_troca || null, 
+            quantidade || 1, 
+            observacoes || '', 
+            id
+        ]);
+        res.json(result.rows[0]);
+    } catch (err) { 
+        console.error("Erro ao atualizar ficha de EPI:", err);
+        res.status(500).json({ error: 'Erro ao atualizar registro.' }); 
+    }
+});
+
+// 4. Deletar um registro da ficha (Caso tenha lançado errado)
+app.delete('/api/fichas-epi/:id', verificarAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM registros_ficha_epi WHERE id = $1', [id]);
+        res.json({ message: 'Registro removido da ficha com sucesso.' });
+    } catch (err) { 
+        console.error("Erro ao deletar registro da ficha:", err);
+        res.status(500).json({ error: 'Erro ao excluir registro.' }); 
+    }
 });
 
 const PORT = 3000;

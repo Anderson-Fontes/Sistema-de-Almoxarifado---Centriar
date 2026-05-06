@@ -9,6 +9,7 @@ import Colaboradores from './pages/Colaboradores';
 import Relatorios from './pages/Relatorios';
 import Login from './pages/Login';
 import Usuarios from './pages/Usuarios';
+import FichaEpi from './pages/FichaEpi'; // ⬅️ NOVA PÁGINA IMPORTADA!
 
 // Importação da API
 import api from './services/api';
@@ -68,7 +69,17 @@ function Avatar({ nome, size = 34, fontSize = 13, style = {} }) {
 
 function Layout({ onLogout, user }) {
   const location = useLocation();
-  const page = pageTitles[location.pathname] || pageTitles['/'];
+  
+  // Lógica inteligente para o título do topo se adaptar às sub-rotas como a Ficha de EPI
+  let page = pageTitles[location.pathname];
+  if (!page) {
+    if (location.pathname.includes('/colaboradores/ficha')) {
+      page = { title: 'Ficha de EPI', sub: 'Registro individual de entrega' };
+    } else {
+      page = pageTitles['/'];
+    }
+  }
+
   const now  = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
 
   const [showProfile,  setShowProfile]  = useState(false);
@@ -115,7 +126,7 @@ function Layout({ onLogout, user }) {
               key={item.to}
               to={item.to}
               end={item.to === '/'}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              className={({ isActive }) => `nav-item ${isActive || (item.to === '/colaboradores' && location.pathname.includes('/ficha')) ? 'active' : ''}`}
             >
               <i className={`bi ${item.icon} nav-icon`}></i>
               {item.label}
@@ -199,7 +210,6 @@ function Layout({ onLogout, user }) {
                 title="Ver meu perfil"
               />
               
-              {/* 💡 NOVO BOTÃO DE SAIR */}
               <button
                 onClick={onLogout}
                 title="Sair do Sistema"
@@ -230,11 +240,13 @@ function Layout({ onLogout, user }) {
         {/* Conteúdo das páginas */}
         <div className="page-content">
           <Routes>
-            <Route path="/"               element={<Estoque       user={user} />} />
-            <Route path="/movimentacoes"  element={<Movimentacoes user={user} />} />
-            <Route path="/colaboradores"  element={<Colaboradores user={user} />} />
-            <Route path="/relatorios"     element={<Relatorios    user={user} />} />
-            <Route path="/usuarios"       element={<Usuarios      user={user} />} />
+            <Route path="/"              element={<Estoque       user={user} />} />
+            <Route path="/movimentacoes" element={<Movimentacoes user={user} />} />
+            <Route path="/colaboradores" element={<Colaboradores user={user} />} />
+            <Route path="/relatorios"    element={<Relatorios    user={user} />} />
+            <Route path="/usuarios"      element={<Usuarios      user={user} />} />
+            {/* ⬅️ NOVA ROTA DA FICHA DE EPI */}
+            <Route path="/colaboradores/ficha/:id" element={<FichaEpi user={user} />} />
           </Routes>
         </div>
       </div>

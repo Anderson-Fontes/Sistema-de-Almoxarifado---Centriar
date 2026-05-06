@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // ⬅️ NOVO: Importação para navegação
 import { Offcanvas } from 'react-bootstrap';
 import api from '../services/api';
 
@@ -20,6 +21,7 @@ function getAvatarColor(nome) {
 }
 
 export default function Colaboradores({ user }) {
+  const navigate = useNavigate(); // ⬅️ NOVO: Hook de navegação
   const [colaboradores, setColaboradores] = useState([]);
   const [busca, setBusca] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -136,13 +138,14 @@ export default function Colaboradores({ user }) {
                 <th>Colaborador</th>
                 <th>Setor / Departamento</th>
                 <th style={{ textAlign: 'center' }}>Status</th>
-                {isAdmin && <th style={{ textAlign: 'right' }}>Ações</th>}
+                {/* ⬅️ NOVO: Coluna Ações agora é visível para todos (para poderem ver a ficha) */}
+                <th style={{ textAlign: 'right' }}>Ações</th>
               </tr>
             </thead>
             <tbody>
               {colaboradoresFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 4 : 3}>
+                  <td colSpan={4}> {/* ⬅️ Ajustado para abranger 4 colunas */}
                     <div className="empty-state">
                       <div className="empty-state-icon"><i className="bi bi-people"></i></div>
                       <div className="empty-state-title">Nenhum colaborador encontrado</div>
@@ -200,28 +203,43 @@ export default function Colaboradores({ user }) {
                     </td>
 
                     {/* Ações */}
-                    {isAdmin && (
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                          <button
-                            className="btn-ghost"
-                            onClick={() => prepararEdicao(colab)}
-                            title="Editar"
-                            style={{ padding: '6px 10px' }}
-                          >
-                            <i className="bi bi-pencil-square"></i>
-                          </button>
-                          <button
-                            className="btn-ghost"
-                            onClick={() => excluirColaborador(colab.id, colab.nome)}
-                            title="Excluir"
-                            style={{ padding: '6px 10px', color: '#f87171', borderColor: 'rgba(239,68,68,0.2)' }}
-                          >
-                            <i className="bi bi-trash3-fill"></i>
-                          </button>
-                        </div>
-                      </td>
-                    )}
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        
+                        {/* ⬅️ NOVO: Botão de Ficha de EPI (Abre a nova tela) */}
+                        <button
+                          className="btn-ghost"
+                          onClick={() => navigate(`/colaboradores/ficha/${colab.id}`)}
+                          title="Ficha de EPI"
+                          style={{ padding: '6px 10px', color: 'var(--info)' }}
+                        >
+                          <i className="bi bi-clipboard2-check-fill" style={{ marginRight: '4px' }}></i>
+                          Ficha
+                        </button>
+
+                        {/* Botões de Edição e Exclusão (Só Admin) */}
+                        {isAdmin && (
+                          <>
+                            <button
+                              className="btn-ghost"
+                              onClick={() => prepararEdicao(colab)}
+                              title="Editar"
+                              style={{ padding: '6px 10px' }}
+                            >
+                              <i className="bi bi-pencil-square"></i>
+                            </button>
+                            <button
+                              className="btn-ghost"
+                              onClick={() => excluirColaborador(colab.id, colab.nome)}
+                              title="Excluir"
+                              style={{ padding: '6px 10px', color: '#f87171', borderColor: 'rgba(239,68,68,0.2)' }}
+                            >
+                              <i className="bi bi-trash3-fill"></i>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
