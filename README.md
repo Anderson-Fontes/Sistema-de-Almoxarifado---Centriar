@@ -1,11 +1,11 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f2027,50:203a43,100:2c5364&height=200&section=header&text=Sistema%20de%20Almoxarifado&fontSize=40&fontColor=ffffff&fontAlignY=38&desc=Centriar%20%E2%80%A2%20Gest%C3%A3o%20Inteligente%20de%20Estoque&descAlignY=58&descSize=16&animation=fadeIn" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f2027,50:203a43,100:2c5364&height=220&section=header&text=Sistema%20de%20Almoxarifado&fontSize=42&fontColor=ffffff&fontAlignY=38&desc=Centriar%20%E2%80%A2%20Gest%C3%A3o%20Inteligente%20de%20Estoque%20e%20EPIs&descAlignY=58&descSize=16&animation=fadeIn" width="100%"/>
 
 <br/>
 
 [![Status](https://img.shields.io/badge/status-em%20desenvolvimento-f59e0b?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Anderson-Fontes/Sistema-de-Almoxarifado---Centriar)
-[![Version](https://img.shields.io/badge/vers%C3%A3o-1.0.0-3b82f6?style=for-the-badge)](https://github.com/Anderson-Fontes/Sistema-de-Almoxarifado---Centriar)
+[![Version](https://img.shields.io/badge/vers%C3%A3o-1.1.0-3b82f6?style=for-the-badge)](https://github.com/Anderson-Fontes/Sistema-de-Almoxarifado---Centriar)
 [![Feito com dedicação](https://img.shields.io/badge/feito%20com-%E2%9D%A4-ef4444?style=for-the-badge)](https://github.com/Anderson-Fontes)
 
 <br/>
@@ -21,8 +21,8 @@
 
 <br/>
 
-> **Plataforma completa para gestão de almoxarifado e controle de estoque.**
-> Desenvolvida com foco em organização, rastreabilidade e eficiência operacional.
+> **Plataforma completa para gestão de almoxarifado, controle de estoque e monitoramento de EPIs.**
+> Desenvolvida com foco em organização, rastreabilidade, segurança do trabalho e eficiência operacional.
 
 <br/>
 
@@ -40,6 +40,7 @@
 - [📖 Visão Geral](#-visão-geral)
 - [🎯 Objetivos](#-objetivos)
 - [✨ Funcionalidades](#-funcionalidades)
+- [🦺 Ficha de EPI](#-ficha-de-epi--nova-funcionalidade)
 - [🧱 Arquitetura](#-arquitetura)
 - [🛠️ Stack Tecnológica](#️-stack-tecnológica)
 - [📂 Estrutura do Projeto](#-estrutura-do-projeto)
@@ -60,7 +61,7 @@
 
 <img align="right" width="320" src="https://media.giphy.com/media/qgQUggAC3Pfv687qPC/giphy.gif" />
 
-O **Sistema de Almoxarifado — Centriar** é uma aplicação **full stack** desenvolvida para gerenciar de forma eficiente o controle de materiais, movimentações de estoque e organização de recursos de uma instituição.
+O **Sistema de Almoxarifado — Centriar** é uma aplicação **full stack** desenvolvida para gerenciar de forma eficiente o controle de materiais, movimentações de estoque, organização de recursos e — agora — o **monitoramento completo de EPIs (Equipamentos de Proteção Individual)** de uma instituição.
 
 A solução foi projetada para atender **cenários reais de gestão**, garantindo:
 
@@ -68,9 +69,10 @@ A solução foi projetada para atender **cenários reais de gestão**, garantind
 - ✅ Redução de **erros operacionais** no dia a dia
 - ✅ Melhoria nos **processos internos** de almoxarifado
 - ✅ **Rastreabilidade** completa de entradas e saídas
-- ✅ **Acesso rápido** ao histórico de movimentações
+- ✅ **Controle individual** de EPIs por colaborador
+- ✅ **Acesso rápido** ao histórico de movimentações e fichas de EPI
 
-Com uma interface moderna e responsiva construída em React, integrada a uma API REST em Node.js e banco de dados PostgreSQL, o sistema oferece controle total sobre o fluxo de materiais em uma única plataforma.
+Com uma interface moderna e responsiva construída em React, integrada a uma API REST em Node.js e banco de dados PostgreSQL, o sistema oferece controle total sobre o fluxo de materiais e a gestão de segurança dos trabalhadores em uma única plataforma.
 
 <br clear="right"/>
 
@@ -82,10 +84,11 @@ Com uma interface moderna e responsiva construída em React, integrada a uma API
 
 | 🎯 Objetivo | 📋 Descrição |
 |---|---|
-| **Centralização** | Unificar todo o controle de estoque em uma única plataforma |
-| **Automação** | Automatizar registros de entrada e saída de materiais |
-| **Rastreabilidade** | Garantir histórico completo de todas as movimentações |
-| **Análise** | Facilitar consultas, filtros e análises do estoque |
+| **Centralização** | Unificar todo o controle de estoque e EPIs em uma única plataforma |
+| **Automação** | Automatizar registros de entrada, saída e entrega de equipamentos |
+| **Rastreabilidade** | Garantir histórico completo de todas as movimentações e fichas de EPI |
+| **Conformidade** | Apoiar o cumprimento das normas de segurança do trabalho (NRs) |
+| **Análise** | Facilitar consultas, filtros e análises do estoque e EPIs |
 | **Eficiência** | Melhorar a produtividade e reduzir erros operacionais |
 | **Segurança** | Controle de acesso com autenticação de usuários |
 
@@ -132,9 +135,9 @@ Com uma interface moderna e responsiva construída em React, integrada a uma API
   </tr>
   <tr>
     <td align="center" width="33%">
-      <h3>⚡</h3>
-      <b>API REST</b><br/>
-      Endpoints padronizados para integração completa entre frontend e backend
+      <h3>🦺</h3>
+      <b>Ficha de EPI</b><br/>
+      Monitoramento individual de EPIs por colaborador, com controle de entrega e validade
     </td>
     <td align="center" width="33%">
       <h3>🧭</h3>
@@ -151,28 +154,132 @@ Com uma interface moderna e responsiva construída em React, integrada a uma API
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
 
+## 🦺 Ficha de EPI — Nova Funcionalidade
+
+<div align="center">
+
+> ### 🆕 Versão 1.1.0
+> **Monitoramento completo de Equipamentos de Proteção Individual por colaborador.**
+
+</div>
+
+A **Ficha de EPI** é um módulo dedicado ao controle e rastreamento de todos os equipamentos de proteção individual entregues aos colaboradores da instituição. Com ela, é possível garantir conformidade com as normas regulamentadoras de segurança do trabalho (NRs) e manter um histórico confiável de cada entrega.
+
+### 🔍 O que é possível fazer com a Ficha de EPI?
+
+<table>
+  <tr>
+    <td width="50%">
+      <h4>📌 Registro de Entregas</h4>
+      Registre cada EPI entregue ao colaborador com data, quantidade, número do CA (Certificado de Aprovação) e responsável pela entrega.
+    </td>
+    <td width="50%">
+      <h4>👷 Ficha Individual por Colaborador</h4>
+      Cada colaborador possui sua própria ficha, com todo o histórico de EPIs recebidos ao longo do tempo.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h4>📅 Controle de Validade</h4>
+      Acompanhe a data de validade de cada EPI entregue, facilitando a identificação de equipamentos vencidos ou próximos do vencimento.
+    </td>
+    <td width="50%">
+      <h4>✍️ Assinatura de Recebimento</h4>
+      Registre a confirmação de recebimento do colaborador, mantendo a rastreabilidade e a responsabilidade sobre o uso dos equipamentos.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h4>🔁 Histórico de Devoluções</h4>
+      Controle devoluções de EPIs danificados ou substituídos, mantendo o ciclo de vida do equipamento documentado.
+    </td>
+    <td width="50%">
+      <h4>📋 Relatório por Setor</h4>
+      Filtre e visualize os EPIs distribuídos por setor, função ou período, facilitando auditorias e inspeções internas.
+    </td>
+  </tr>
+</table>
+
+### 📐 Modelo de Dados — Ficha de EPI
+
+```
+┌─────────────────────┐       ┌──────────────────────────┐       ┌───────────────────┐
+│    colaboradores    │       │       fichas_epi          │       │      epis         │
+│─────────────────────│       │──────────────────────────│       │───────────────────│
+│ id                  │◄──────│ colaborador_id            │  ┌───►│ id                │
+│ nome                │       │ epi_id               ────►┘  │   │ nome              │
+│ matricula           │       │ quantidade                │   │   │ descricao         │
+│ setor               │       │ data_entrega              │   │   │ numero_ca         │
+│ funcao              │       │ data_validade             │   │   │ categoria         │
+│ ativo               │       │ data_devolucao            │   │   │ unidade           │
+└─────────────────────┘       │ assinatura_recebimento    │   └───┘                   │
+                              │ observacao                │
+                              │ criado_em                 │
+                              └──────────────────────────┘
+```
+
+### 🌐 Endpoints da Ficha de EPI
+
+<div align="center">
+
+| Método | Rota | Descrição |
+|:---:|---|---|
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/colaboradores` | Lista todos os colaboradores |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/colaboradores` | Cadastra um novo colaborador |
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/colaboradores/:id/ficha-epi` | Retorna a ficha de EPI de um colaborador |
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/fichas-epi` | Lista todas as entregas de EPI |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/fichas-epi` | Registra entrega de EPI a um colaborador |
+| ![PUT](https://img.shields.io/badge/-PUT-fca130?style=flat-square) | `/fichas-epi/:id` | Atualiza dados de uma entrega (ex: devolução) |
+| ![DELETE](https://img.shields.io/badge/-DELETE-f93e3e?style=flat-square) | `/fichas-epi/:id` | Remove um registro de entrega |
+
+</div>
+
+<details>
+<summary><b>📌 Exemplo de payload — Entrega de EPI</b></summary>
+
+<br/>
+
+```json
+{
+  "colaborador_id": 5,
+  "epi_id": 3,
+  "quantidade": 2,
+  "data_entrega": "2026-04-14",
+  "data_validade": "2027-04-14",
+  "numero_ca": "12345",
+  "assinatura_recebimento": true,
+  "observacao": "Substituição por desgaste"
+}
+```
+
+</details>
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
+
 ## 🧱 Arquitetura
 
 <div align="center">
 
+```
 ┌─────────────────────────────────────────────────────────┐
 │                    🌐 CLIENT LAYER                      │
 │              React + JavaScript + CSS3 + Axios           │
 └──────────────────────────┬──────────────────────────────┘
-│  HTTP / REST
-▼
+                           │  HTTP / REST
+                           ▼
 ┌─────────────────────────────────────────────────────────┐
 │                    ⚙️  API LAYER                        │
 │              Node.js + Express + Controllers            │
-│         Autenticação · Validações · Regras de Negócio   │
+│    Autenticação · Validações · Regras de Negócio        │
 └──────────────────────────┬──────────────────────────────┘
-│  SQL Queries
-▼
+                           │  SQL Queries
+                           ▼
 ┌─────────────────────────────────────────────────────────┐
-│                  🗄️  DATABASE LAYER                      │
+│                  🗄️  DATABASE LAYER                     │
 │              PostgreSQL — gerenciado via pgAdmin         │
-│         Produtos · Movimentações · Usuários              │
+│   Produtos · Movimentações · EPIs · Colaboradores        │
 └─────────────────────────────────────────────────────────┘
+```
 
 </div>
 
@@ -241,16 +348,20 @@ Com uma interface moderna e responsiva construída em React, integrada a uma API
 📦 Sistema-de-Almoxarifado---Centriar
  │
  ┣ 📂 backend
- ┃ ┣ 📄 server.js           # Ponto de entrada do servidor Express + rotas
- ┃ ┗ 📄 database.js         # Configuração e conexão com o PostgreSQL
+ ┃ ┣ 📄 server.js              # Ponto de entrada do servidor Express + rotas
+ ┃ ┗ 📄 database.js            # Configuração e conexão com o PostgreSQL
  ┃
  ┣ 📂 frontend
  ┃ ┣ 📂 src
- ┃ ┃ ┣ 📂 pages             # Páginas da aplicação (React)
- ┃ ┃ ┣ 📂 components        # Componentes reutilizáveis
- ┃ ┃ ┣ 📂 services          # Camada de comunicação com a API (Axios)
- ┃ ┃ ┗ 📄 App.jsx           # Componente raiz da aplicação
- ┃ ┗ 📄 index.html          # HTML base do Vite
+ ┃ ┃ ┣ 📂 pages                # Páginas da aplicação (React)
+ ┃ ┃ ┃ ┣ 📄 Produtos.jsx       # Gestão de produtos
+ ┃ ┃ ┃ ┣ 📄 Movimentacoes.jsx  # Entradas e saídas
+ ┃ ┃ ┃ ┣ 📄 FichaEPI.jsx       # 🆕 Ficha de EPI por colaborador
+ ┃ ┃ ┃ ┗ 📄 Dashboard.jsx      # Visão geral do almoxarifado
+ ┃ ┃ ┣ 📂 components           # Componentes reutilizáveis
+ ┃ ┃ ┣ 📂 services             # Camada de comunicação com a API (Axios)
+ ┃ ┃ ┗ 📄 App.jsx              # Componente raiz da aplicação
+ ┃ ┗ 📄 index.html             # HTML base do Vite
  ┃
  ┗ 📄 README.md
 ```
@@ -272,6 +383,7 @@ cd Sistema-de-Almoxarifado---Centriar
 
 1. Abra o **pgAdmin** e crie um banco de dados chamado `almoxarifado`
 2. Execute o script SQL de criação das tabelas localizado na pasta do projeto
+3. O script já inclui as tabelas do módulo de **Ficha de EPI** (`colaboradores`, `epis`, `fichas_epi`)
 
 ### 3️⃣ Configure as variáveis de ambiente do Backend
 
@@ -310,6 +422,8 @@ npm run dev
 
 ## 🌐 Padrão de API
 
+### 📦 Módulo de Estoque
+
 <div align="center">
 
 | Método | Rota | Descrição |
@@ -320,6 +434,22 @@ npm run dev
 | ![DELETE](https://img.shields.io/badge/-DELETE-f93e3e?style=flat-square) | `/produtos/:id` | Remove um produto |
 | ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/movimentacoes` | Lista o histórico de movimentações |
 | ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/movimentacoes` | Registra entrada ou saída de material |
+
+</div>
+
+### 🦺 Módulo de EPI
+
+<div align="center">
+
+| Método | Rota | Descrição |
+|:---:|---|---|
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/colaboradores` | Lista todos os colaboradores |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/colaboradores` | Cadastra um novo colaborador |
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/colaboradores/:id/ficha-epi` | Ficha de EPI de um colaborador |
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/fichas-epi` | Lista todas as entregas de EPI |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/fichas-epi` | Registra entrega de EPI |
+| ![PUT](https://img.shields.io/badge/-PUT-fca130?style=flat-square) | `/fichas-epi/:id` | Atualiza registro (ex: devolução) |
+| ![DELETE](https://img.shields.io/badge/-DELETE-f93e3e?style=flat-square) | `/fichas-epi/:id` | Remove um registro de entrega |
 
 </div>
 
@@ -358,14 +488,35 @@ npm run dev
 
 </details>
 
+<details>
+<summary><b>📌 Exemplo de payload — Ficha de EPI</b></summary>
+
+<br/>
+
+```json
+{
+  "colaborador_id": 5,
+  "epi_id": 3,
+  "quantidade": 2,
+  "data_entrega": "2026-04-14",
+  "data_validade": "2027-04-14",
+  "numero_ca": "12345",
+  "assinatura_recebimento": true,
+  "observacao": "Substituição por desgaste"
+}
+```
+
+</details>
+
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
 
 ## 🗄️ Banco de Dados
 
-O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado via **pgAdmin**. O modelo é composto pelas seguintes entidades principais:
+O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado via **pgAdmin**. O modelo é composto pelas seguintes entidades:
 
 <div align="center">
 
+```
 ┌──────────────┐       ┌──────────────────┐       ┌──────────────┐
 │   produtos   │       │  movimentacoes   │       │   usuarios   │
 │──────────────│       │──────────────────│       │──────────────│
@@ -379,6 +530,21 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 │ criado_em    │       └──────────────────┘
 └──────────────┘
 
+┌──────────────────┐       ┌──────────────────────────┐       ┌──────────────┐
+│  colaboradores   │       │       fichas_epi          │       │    epis      │
+│──────────────────│       │──────────────────────────│       │──────────────│
+│ id               │◄──────│ colaborador_id            │   ┌──►│ id           │
+│ nome             │       │ epi_id               ─────┼───┘  │ nome         │
+│ matricula        │       │ quantidade                │      │ descricao    │
+│ setor            │       │ data_entrega              │      │ numero_ca    │
+│ funcao           │       │ data_validade             │      │ categoria    │
+│ ativo            │       │ data_devolucao            │      │ unidade      │
+│ criado_em        │       │ assinatura_recebimento    │      │ criado_em    │
+└──────────────────┘       │ observacao                │      └──────────────┘
+                           │ criado_em                 │
+                           └──────────────────────────┘
+```
+
 </div>
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
@@ -387,6 +553,7 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 
 <div align="center">
 
+```
 ╔══════════════════╗    ╔══════════════════╗    ╔══════════════════╗
 ║   RESTful API    ║    ║  Arquitetura MVC  ║    ║  Código Limpo    ║
 ║  Padronização    ║    ║  Separação clara  ║    ║  Organizado e    ║
@@ -398,6 +565,7 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 ║  React com       ║    ║  Frontend ↔ API  ║    ║  Ambiente com    ║
 ║  reuso de UI     ║    ║  via Axios       ║    ║     .env         ║
 ╚══════════════════╝    ╚══════════════════╝    ╚══════════════════╝
+```
 
 </div>
 
@@ -410,9 +578,12 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 - [x] Registro de movimentações (entrada e saída)
 - [x] Consulta e filtragem de produtos
 - [x] Integração frontend ↔ API REST
+- [x] **Ficha de EPI por colaborador** ✅ _Novo em v1.1.0_
+- [x] **Registro de entrega e devolução de EPIs** ✅ _Novo em v1.1.0_
+- [x] **Controle de validade e CA dos EPIs** ✅ _Novo em v1.1.0_
 - [ ] Autenticação com JWT
+- [ ] Alertas automáticos de estoque mínimo e EPI vencido
 - [ ] Relatórios exportáveis em PDF/Excel
-- [ ] Alertas automáticos de estoque mínimo
 - [ ] Dashboard com gráficos e indicadores
 - [ ] Deploy em produção
 
@@ -424,7 +595,7 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 
 ![Status Badge](https://img.shields.io/badge/%F0%9F%9F%A1%20Status-Em%20Desenvolvimento-f59e0b?style=for-the-badge)
 
-**O sistema está em evolução contínua**, com melhorias estruturais e novas funcionalidades sendo implementadas regularmente. Contribuições e feedbacks são sempre bem-vindos!
+**O sistema está em evolução contínua**, com melhorias estruturais e novas funcionalidades sendo implementadas regularmente. A versão **1.1.0** trouxe o módulo completo de **Ficha de EPI**, adicionando uma camada de segurança e conformidade com as normas regulamentadoras ao sistema. Contribuições e feedbacks são sempre bem-vindos!
 
 </div>
 
@@ -450,7 +621,7 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:2c5364,50:203a43,100:0f2027&height=120&section=footer" width="100%"/>
 
-**Centriar © 2026 • Sistema de Almoxarifado**
-*Desenvolvido com foco em performance, escalabilidade e organização.*
+**Centriar © 2026 • Sistema de Almoxarifado**  
+*Desenvolvido com foco em performance, escalabilidade, segurança e organização.*
 
 </div>
