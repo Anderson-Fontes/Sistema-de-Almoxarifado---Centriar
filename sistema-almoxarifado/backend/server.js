@@ -252,6 +252,21 @@ app.delete('/api/colaboradores/:id', verificarAdmin, async (req, res) => {
     }
 });
 
+// Buscar um colaborador específico pelo ID
+app.get('/api/colaboradores/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query('SELECT * FROM colaboradores WHERE id = $1', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Colaborador não encontrado.' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) { 
+        console.error("Erro ao buscar colaborador por ID:", err);
+        res.status(500).json({ error: 'Erro ao buscar colaborador.' }); 
+    }
+});
+
 // =======================================================
 // --- ROTAS DE MOVIMENTAÇÕES (RETIRADAS E DEVOLUÇÕES) ---
 // =======================================================
@@ -529,6 +544,28 @@ app.delete('/api/fichas-epi/:id', verificarAdmin, async (req, res) => {
     } catch (err) { 
         console.error("Erro ao deletar registro da ficha:", err);
         res.status(500).json({ error: 'Erro ao excluir registro.' }); 
+    }
+});
+
+// =======================================================
+// --- ROTA DE ALERTAS GERAIS PARA A DASHBOARD ---
+// =======================================================
+app.get('/api/fichas-epi/alertas', async (req, res) => {
+    try {
+        // Busca EPIs entregues que têm data de troca preenchida e vencem em <= 15 dias ou já venceram
+        const query = `
+            SELECT f.*, c.nome as colaborador_nome, e.nome as epi_nome 
+            FROM registros_ficha_epi f
+            JOIN colaboradores c ON f.colaborador_id = c.id
+            LEFT JOIN epis e ON f.epi_id = e.id
+            WHERE f.proxima_troca IS NOT NULL AND f.proxima_troca <= CURRENT_DATE + INTERVAL '15 days'
+            ORDER BY f.proxima_troca ASC
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) { 
+        console.error("Erro ao buscar alertas de troca:", err);
+        res.status(500).json({ error: 'Erro ao buscar alertas.' }); 
     }
 });
 

@@ -9,10 +9,10 @@ export default function FichaEpi({ user }) {
   
   const [ficha, setFicha] = useState([]);
   const [episEstoque, setEpisEstoque] = useState([]);
+  const [colaborador, setColaborador] = useState(null); // 💡 Novo estado para os dados do funcionário
   const [showModal, setShowModal] = useState(false);
   const [isItemManual, setIsItemManual] = useState(false);
   
-  // 💡 Novo estado para controlar se estamos CRIANDO ou EDITANDO
   const [editandoId, setEditandoId] = useState(null);
 
   const isAdmin = user?.perfil === 'ADMIN';
@@ -34,7 +34,18 @@ export default function FichaEpi({ user }) {
   useEffect(() => {
     carregarFicha();
     carregarEstoque();
+    carregarColaborador(); // 💡 Chama a função para buscar o funcionário
   }, [id]);
+
+  // 💡 Função para buscar os dados do colaborador no backend
+  const carregarColaborador = async () => {
+    try {
+      const res = await api.get(`/colaboradores/${id}`);
+      setColaborador(res.data);
+    } catch (err) {
+      console.error("Erro ao carregar dados do colaborador:", err);
+    }
+  };
 
   const carregarFicha = async () => {
     try {
@@ -66,7 +77,6 @@ export default function FichaEpi({ user }) {
     setFormData({ ...formData, [name]: value });
   };
 
-  // 💡 Função para fechar o modal e limpar os dados
   const fecharModal = () => {
     setShowModal(false);
     setEditandoId(null);
@@ -74,12 +84,10 @@ export default function FichaEpi({ user }) {
     setFormData(estadoInicial);
   };
 
-  // 💡 Função para preencher o formulário com os dados do item clicado
   const abrirEdicao = (item) => {
     setEditandoId(item.id);
-    setIsItemManual(!!item.nome_manual); // Se tiver nome manual, ativa o switch
+    setIsItemManual(!!item.nome_manual); 
 
-    // Função auxiliar para cortar a hora da data do banco e preencher o input
     const formatDataInput = (dataStr) => dataStr ? dataStr.split('T')[0] : '';
 
     setFormData({
@@ -108,11 +116,9 @@ export default function FichaEpi({ user }) {
 
     try {
       if (editandoId) {
-        // 💡 Se tem ID de edição, faz um PUT (Atualizar)
         await api.put(`/fichas-epi/${editandoId}`, formData);
         alert("Registro atualizado com sucesso!");
       } else {
-        // Se NÃO tem ID de edição, faz um POST (Criar)
         await api.post('/fichas-epi', formData);
         alert("Registro salvo com sucesso!");
       }
@@ -191,17 +197,48 @@ export default function FichaEpi({ user }) {
   return (
     <div>
       <div className="panel">
-        <div className="panel-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <button className="btn-ghost" onClick={() => navigate('/colaboradores')} title="Voltar" style={{ padding: '6px 12px' }}>
+        
+        {/* 💡 CABEÇALHO ATUALIZADO COM OS DADOS DO FUNCIONÁRIO */}
+        <div className="panel-header" style={{ alignItems: 'flex-start', paddingBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+            <button className="btn-ghost" onClick={() => navigate('/colaboradores')} title="Voltar" style={{ padding: '6px 12px', marginTop: '4px', border: '1px solid var(--border)' }}>
               <i className="bi bi-arrow-left"></i>
             </button>
-            <div className="panel-title">
-              <i className="bi bi-clipboard2-check-fill text-info"></i>
-              Ficha de EPI do Funcionário
+            <div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <i className="bi bi-clipboard2-check-fill text-info me-2"></i>
+                Ficha de Equipamentos e EPIs
+              </div>
+              
+              {colaborador ? (
+                <div>
+                  <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.2' }}>
+                    {colaborador.nome}
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                    {colaborador.cargo && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <i className="bi bi-briefcase-fill" style={{ color: 'var(--primary-light)' }}></i> 
+                        {colaborador.cargo}
+                      </span>
+                    )}
+                    {colaborador.cpf && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <i className="bi bi-person-vcard" style={{ color: 'var(--primary-light)' }}></i> 
+                        CPF: {colaborador.cpf}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-muted)' }}>
+                  Carregando dados...
+                </div>
+              )}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          
+          <div style={{ display: 'flex', gap: 10, marginTop: '4px' }}>
             {isAdmin && (
               <button className="btn-primary-custom" onClick={() => setShowModal(true)}>
                 <i className="bi bi-plus-lg"></i> Registrar Entrega
@@ -209,6 +246,7 @@ export default function FichaEpi({ user }) {
             )}
           </div>
         </div>
+        {/* FIM DO CABEÇALHO ATUALIZADO */}
 
         <div style={{ overflowX: 'auto' }}>
           <table className="data-table">
@@ -257,7 +295,6 @@ export default function FichaEpi({ user }) {
                   <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.quantidade}</td>
                   {isAdmin && (
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      {/* 💡 Botão de Editar Adicionado */}
                       <button className="btn-ghost me-2" onClick={() => abrirEdicao(item)} title="Editar" style={{ color: '#3b82f6' }}>
                         <i className="bi bi-pencil-square"></i>
                       </button>
@@ -276,7 +313,6 @@ export default function FichaEpi({ user }) {
       <Offcanvas show={showModal} onHide={fecharModal} placement="end">
         <Offcanvas.Header closeButton>
           <Offcanvas.Title>
-            {/* 💡 Título muda se estiver editando ou criando */}
             <i className={`bi ${editandoId ? 'bi-pencil-square' : 'bi-box-seam'} me-2 text-primary`}></i> 
             {editandoId ? "Editar Entrega" : "Nova Entrega"}
           </Offcanvas.Title>

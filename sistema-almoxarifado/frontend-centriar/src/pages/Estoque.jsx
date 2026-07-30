@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Offcanvas } from 'react-bootstrap';
+import { Offcanvas, Modal } from 'react-bootstrap';
 import api from '../services/api';
 
 const categoriaBadge = {
@@ -43,21 +43,31 @@ export default function Estoque({ user }) {
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState(estadoInicialForm);
     const [categoriaFiltro, setCategoriaFiltro] = useState('');
+    
+    // Estados dos Alertas
+    const [trocasEmAlerta, setTrocasEmAlerta] = useState([]); 
+    const [showModalAlertas, setShowModalAlertas] = useState(false);
+    const [abaAlerta, setAbaAlerta] = useState('todos');
+    const [colaboradorExpandido, setColaboradorExpandido] = useState(null); 
+    const [categoriaExpandida, setCategoriaExpandida] = useState(null); // NOVO: Controla a sanfona de categorias de estoque
 
-    // 💡 Adicionado: Trava de Perfil
     const isAdmin = user?.perfil === 'ADMIN';
 
-    const carregarMateriais = () => { api.get('/epis').then(r => setMateriais(r.data)).catch(console.error); };
+    const carregarMateriais = () => { 
+        api.get('/epis').then(r => setMateriais(r.data)).catch(console.error); 
+        api.get('/fichas-epi/alertas').then(r => setTrocasEmAlerta(r.data)).catch(console.error);
+    };
+    
     useEffect(() => { carregarMateriais(); }, []);
 
     const abrirPainelNovo = () => { 
-        if (!isAdmin) return; // Segurança
+        if (!isAdmin) return;
         setFormData(estadoInicialForm); 
         setShowForm(true); 
     };
 
     const prepararEdicao = (m) => {
-        if (!isAdmin) return; // Segurança
+        if (!isAdmin) return;
         setFormData({ 
             ...m, validade_ca: m.validade_ca ? m.validade_ca.split('T')[0] : '', 
             bitola: m.bitola || '1/4', estado: m.estado || 'Novo', nivel_pacote: m.nivel_pacote || '',
@@ -67,7 +77,7 @@ export default function Estoque({ user }) {
     };
 
     const excluirMaterial = async (id, nome) => {
-        if (!isAdmin) return; // Segurança
+        if (!isAdmin) return; 
         if (window.confirm(`Tem certeza que deseja excluir "${nome}"?\n\nO histórico de quem usou será mantido.`)) {
             try { await api.delete(`/epis/${id}`); carregarMateriais(); } catch (error) { alert('Erro ao excluir.'); }
         }
@@ -100,7 +110,7 @@ export default function Estoque({ user }) {
 
     const salvarMaterial = (e) => {
         e.preventDefault();
-        if (!isAdmin) return; // Segurança
+        if (!isAdmin) return;
         const req = formData.id ? api.put(`/epis/${formData.id}`, formData) : api.post('/epis', formData);
         req.then(() => { setShowForm(false); carregarMateriais(); }).catch(() => alert('Erro ao salvar.'));
     };
@@ -145,19 +155,84 @@ export default function Estoque({ user }) {
 
     return (
         <div>
-            {itensEmAlerta.length > 0 && (
-                <div className="alert-banner" style={{ background: '#fef2f2', border: '1px solid #fca5a5', padding: '16px', borderRadius: '12px', display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                    <div style={{ color: '#ef4444', fontSize: '24px' }}><i className="bi bi-exclamation-triangle-fill"></i></div>
-                    <div><div style={{ fontWeight: 700, color: '#991b1b', marginBottom: '4px' }}>Reposição de Estoque Necessária</div><div style={{ color: '#b91c1c', fontSize: '14px' }}>{itensEmAlerta.length} {itensEmAlerta.length === 1 ? 'item atingiu' : 'itens atingiram'} o nível mínimo crítico.</div></div>
-                </div>
-            )}
+            {/* ── BARRA COMPACTA DE ALERTAS DO SISTEMA ── */}
+            {(itensEmAlerta.length > 0 || casEmAlerta.length > 0 || trocasEmAlerta.length > 0) && (
+                <div style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '12px',
+                    padding: '12px 18px',
+                    marginBottom: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontWeight: 700,
+                            fontSize: '13.5px',
+                            color: 'var(--text-primary)'
+                        }}>
+                            <i className="bi bi-bell-fill text-warning" style={{ fontSize: '16px' }}></i>
+                            Central de Alertas:
+                        </div>
 
-            {casEmAlerta.length > 0 && (
-                <div className="alert-banner" style={{ background: '#fffbeb', border: '1px solid #fcd34d', padding: '16px', borderRadius: '12px', display: 'flex', gap: '16px', marginBottom: '24px' }}>
-                    <div style={{ color: '#d97706', fontSize: '24px' }}><i className="bi bi-shield-exclamation"></i></div>
-                    <div>
-                        <div style={{ fontWeight: 700, color: '#92400e', marginBottom: '4px' }}>Atenção: Validade de C.A.</div>
-                        <div style={{ color: '#b45309', fontSize: '14px' }}>{casEmAlerta.length} {casEmAlerta.length === 1 ? 'EPI está' : 'EPIs estão'} com o Certificado de Aprovação vencido ou vencendo nos próximos 30 dias.</div>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {itensEmAlerta.length > 0 && (
+                                <button
+                                    onClick={() => { setAbaAlerta('estoque'); setShowModalAlertas(true); }}
+                                    style={{
+                                        background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)',
+                                        borderRadius: '20px', padding: '4px 12px', fontSize: '12px', fontWeight: 700,
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                                    }}
+                                >
+                                    <i className="bi bi-box-seam"></i> {itensEmAlerta.length} estoque baixo
+                                </button>
+                            )}
+
+                            {casEmAlerta.length > 0 && (
+                                <button
+                                    onClick={() => { setAbaAlerta('ca'); setShowModalAlertas(true); }}
+                                    style={{
+                                        background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)',
+                                        borderRadius: '20px', padding: '4px 12px', fontSize: '12px', fontWeight: 700,
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                                    }}
+                                >
+                                    <i className="bi bi-shield-exclamation"></i> {casEmAlerta.length} C.A. em risco
+                                </button>
+                            )}
+
+                            {trocasEmAlerta.length > 0 && (
+                                <button
+                                    onClick={() => { setAbaAlerta('trocas'); setShowModalAlertas(true); }}
+                                    style={{
+                                        background: 'rgba(59,130,246,0.12)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.25)',
+                                        borderRadius: '20px', padding: '4px 12px', fontSize: '12px', fontWeight: 700,
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                                    }}
+                                >
+                                    <i className="bi bi-person-badge"></i> {trocasEmAlerta.length} trocas de EPI
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            className="btn-ghost"
+                            style={{ fontSize: '12.5px', padding: '6px 12px', fontWeight: 700, color: 'var(--primary-light)' }}
+                            onClick={() => { setAbaAlerta('todos'); setShowModalAlertas(true); }}
+                        >
+                            <i className="bi bi-arrows-angle-expand me-1"></i> Abrir Pop-up
+                        </button>
                     </div>
                 </div>
             )}
@@ -165,8 +240,8 @@ export default function Estoque({ user }) {
             <div className="kpi-grid">
                 <div className="kpi-card"><div className="kpi-icon" style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}><i className="bi bi-box-seam-fill"></i></div><div className="kpi-value">{materiais.length}</div><div className="kpi-label">Itens Cadastrados</div></div>
                 <div className="kpi-card"><div className="kpi-icon" style={{ background: 'rgba(16,185,129,0.1)', color: '#34d399' }}><i className="bi bi-check2-circle"></i></div><div className="kpi-value">{materiais.length - itensEmAlerta.length}</div><div className="kpi-label">Em Nível Adequado</div></div>
-                <div className="kpi-card"><div className="kpi-icon" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171' }}><i className="bi bi-arrow-down-circle-fill"></i></div><div className="kpi-value text-danger">{itensEmAlerta.length}</div><div className="kpi-label">Abaixo do Mínimo</div></div>
-                <div className="kpi-card"><div className="kpi-icon" style={{ background: 'rgba(245,158,11,0.1)', color: '#fbbf24' }}><i className="bi bi-shield-exclamation"></i></div><div className="kpi-value text-warning">{casEmAlerta.length}</div><div className="kpi-label">C.A. em Alerta</div></div>
+                <div className="kpi-card" style={{ cursor: 'pointer' }} onClick={() => { setAbaAlerta('estoque'); setShowModalAlertas(true); }}><div className="kpi-icon" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171' }}><i className="bi bi-arrow-down-circle-fill"></i></div><div className="kpi-value text-danger">{itensEmAlerta.length}</div><div className="kpi-label">Abaixo do Mínimo</div></div>
+                <div className="kpi-card" style={{ cursor: 'pointer' }} onClick={() => { setAbaAlerta('ca'); setShowModalAlertas(true); }}><div className="kpi-icon" style={{ background: 'rgba(245,158,11,0.1)', color: '#fbbf24' }}><i className="bi bi-shield-exclamation"></i></div><div className="kpi-value text-warning">{casEmAlerta.length}</div><div className="kpi-label">C.A. em Alerta</div></div>
             </div>
 
             <div className="panel">
@@ -179,7 +254,6 @@ export default function Estoque({ user }) {
                         </select>
                         <div className="search-box"><i className="bi bi-search"></i><input className="search-input" placeholder="Buscar item..." value={busca} onChange={e => setBusca(e.target.value)} /></div>
                         
-                        {/* 💡 Trava: Botão "Novo Item" só aparece para Admin */}
                         {isAdmin && (
                             <button className="btn-primary-custom" onClick={abrirPainelNovo}><i className="bi bi-plus-lg"></i> Novo Item</button>
                         )}
@@ -248,7 +322,6 @@ export default function Estoque({ user }) {
                                             </div>
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
-                                            {/* 💡 Trava: Botões de ação só aparecem para Admin */}
                                             {isAdmin ? (
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                     <button className="btn-ghost" onClick={() => prepararEdicao(mat)}><i className="bi bi-pencil-square"></i></button>
@@ -266,6 +339,7 @@ export default function Estoque({ user }) {
                 </div>
             </div>
 
+            {/* ── OFFCANVAS DE CADASTRO/EDIÇÃO ── */}
             <Offcanvas show={showForm} onHide={() => setShowForm(false)} placement="end" style={{ width: '450px' }}>
                 <Offcanvas.Header closeButton style={{ background: '#f8fafc' }}>
                     <Offcanvas.Title className="fw-bold fs-5">{formData.id ? <><i className="bi bi-pencil-square text-warning me-2"></i>Editar Material</> : <><i className="bi bi-box-seam text-primary me-2"></i>Cadastrar Material</>}</Offcanvas.Title>
@@ -409,6 +483,222 @@ export default function Estoque({ user }) {
                     </form>
                 </Offcanvas.Body>
             </Offcanvas>
+
+            {/* ── POP-UP CENTRAL DE ALERTAS DETALHADOS ── */}
+            <Modal
+                show={showModalAlertas}
+                onHide={() => setShowModalAlertas(false)}
+                centered
+                size="lg"
+                contentClassName="bg-dark border-0"
+            >
+                <Modal.Header
+                    closeButton
+                    closeVariant="white"
+                    style={{ background: 'var(--surface-3)', borderBottom: '1px solid var(--border)', borderRadius: '16px 16px 0 0', padding: '16px 22px' }}
+                >
+                    <Modal.Title style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(245,158,11,0.12)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>
+                            <i className="bi bi-bell-fill"></i>
+                        </div>
+                        Central de Alertas e Pendências
+                    </Modal.Title>
+                </Modal.Header>
+
+                <Modal.Body style={{ background: 'var(--surface-2)', padding: '20px', maxHeight: '70vh', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px' }}>
+                        <button className={`btn btn-sm ${abaAlerta === 'todos' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setAbaAlerta('todos')} style={{ borderRadius: '8px', fontWeight: 700 }}>
+                            Todos ({itensEmAlerta.length + casEmAlerta.length + trocasEmAlerta.length})
+                        </button>
+                        <button className={`btn btn-sm ${abaAlerta === 'estoque' ? 'btn-danger' : 'btn-outline-danger'}`} onClick={() => setAbaAlerta('estoque')} style={{ borderRadius: '8px', fontWeight: 700 }}>
+                            Estoque Mínimo ({itensEmAlerta.length})
+                        </button>
+                        <button className={`btn btn-sm ${abaAlerta === 'ca' ? 'btn-warning text-dark' : 'btn-outline-warning'}`} onClick={() => setAbaAlerta('ca')} style={{ borderRadius: '8px', fontWeight: 700 }}>
+                            Validade C.A. ({casEmAlerta.length})
+                        </button>
+                        <button className={`btn btn-sm ${abaAlerta === 'trocas' ? 'btn-info text-white' : 'btn-outline-info'}`} onClick={() => setAbaAlerta('trocas')} style={{ borderRadius: '8px', fontWeight: 700 }}>
+                            Trocas de EPI ({trocasEmAlerta.length})
+                        </button>
+                    </div>
+
+                    {/* 1. SEÇÃO DE ESTOQUE MÍNIMO (COM ACORDEÃO POR CATEGORIA) */}
+                    {(abaAlerta === 'todos' || abaAlerta === 'estoque') && itensEmAlerta.length > 0 && (
+                        <div className="mb-4">
+                            <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#ef4444', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <i className="bi bi-box-seam-fill"></i> Reposição de Estoque Necessária
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {(() => {
+                                    // Agrupa os itens pela Categoria
+                                    const estoqueAgrupado = itensEmAlerta.reduce((acc, m) => {
+                                        if (!acc[m.categoria]) acc[m.categoria] = [];
+                                        acc[m.categoria].push(m);
+                                        return acc;
+                                    }, {});
+
+                                    return Object.keys(estoqueAgrupado).map(categoria => {
+                                        const itens = estoqueAgrupado[categoria];
+                                        const isExpandido = categoriaExpandida === categoria;
+
+                                        return (
+                                            <div key={categoria} style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', borderLeft: '4px solid #ef4444', borderRadius: '8px', overflow: 'hidden' }}>
+                                                {/* Cabeçalho Clicável da Categoria */}
+                                                <div
+                                                    onClick={() => setCategoriaExpandida(isExpandido ? null : categoria)}
+                                                    style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isExpandido ? 'rgba(239,68,68,0.05)' : 'transparent' }}
+                                                >
+                                                    <div style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        <i className={`bi ${isExpandido ? 'bi-chevron-down' : 'bi-chevron-right'}`} style={{ color: '#ef4444', fontSize: 12 }}></i>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            {categoriaBadge[categoria] ? <i className={`bi ${categoriaBadge[categoria].icon}`}></i> : <i className="bi bi-tag-fill"></i>} 
+                                                            {categoria}
+                                                        </span>
+                                                    </div>
+                                                    <span style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', padding: '2px 8px', borderRadius: '20px', fontWeight: 700, fontSize: '11px' }}>
+                                                        {itens.length} item(ns)
+                                                    </span>
+                                                </div>
+
+                                                {/* Lista Interna dos Materiais da Categoria */}
+                                                {isExpandido && (
+                                                    <div style={{ padding: '8px 14px 12px 34px', borderTop: '1px solid var(--border)' }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                            {itens.map(m => (
+                                                                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed var(--border)', paddingBottom: '6px', paddingTop: '4px' }}>
+                                                                    <div>
+                                                                        <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 700 }}>
+                                                                            <i className="bi bi-arrow-return-right me-1" style={{ opacity: 0.5 }}></i> {m.nome}
+                                                                        </div>
+                                                                        {m.codigo_identificacao && <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginLeft: 16 }}>SKU / PN: {m.codigo_identificacao}</div>}
+                                                                    </div>
+                                                                    <div style={{ textAlign: 'right' }}>
+                                                                        <div style={{ fontSize: '12px', color: '#ef4444', fontWeight: 800 }}>Atual: {m.categoria === 'Gás' || m.categoria === 'Cobre' ? `${m.peso}kg` : m.nivel_pacote ? m.nivel_pacote : `${m.quantidade} un`}</div>
+                                                                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Mínimo: {m.categoria === 'Gás' || m.categoria === 'Cobre' ? `${m.peso_minimo}kg` : m.nivel_pacote ? 'Metade' : `${m.estoque_minimo} un`}</div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 2. SEÇÃO DE VALIDADE DE C.A. */}
+                    {(abaAlerta === 'todos' || abaAlerta === 'ca') && casEmAlerta.length > 0 && (
+                        <div className="mb-4">
+                            <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#f59e0b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <i className="bi bi-shield-exclamation"></i> Certificados de Aprovação (C.A.) em Risco
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {casEmAlerta.map(m => {
+                                    const dias = calcularDiasVencimento(m.validade_ca);
+                                    const isVencido = dias < 0;
+                                    const isHoje = dias === 0;
+                                    const corTag = isVencido || isHoje ? '#ef4444' : '#f59e0b';
+                                    const bgTag = isVencido || isHoje ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)';
+                                    const dataFmt = new Date(m.validade_ca.split('T')[0] + 'T12:00:00').toLocaleDateString('pt-BR');
+
+                                    return (
+                                        <div key={m.id} style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', borderLeft: `4px solid ${corTag}`, borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <div style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--text-primary)' }}>{m.nome}</div>
+                                                <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>Número do C.A.: {m.numero_ca || 'Não cadastrado'}</div>
+                                            </div>
+                                            <span style={{ background: bgTag, color: corTag, border: `1px solid ${corTag}40`, padding: '4px 10px', borderRadius: '20px', fontWeight: 700, fontSize: '11px' }}>
+                                                {isVencido ? `VENCIDO HÁ ${Math.abs(dias)} DIAS (${dataFmt})` : isHoje ? 'VENCE HOJE' : `VENCE EM ${dias} DIAS (${dataFmt})`}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 3. SEÇÃO DE TROCAS DE EPI (COM ACORDEÃO POR NOME) */}
+                    {(abaAlerta === 'todos' || abaAlerta === 'trocas') && trocasEmAlerta.length > 0 && (
+                        <div className="mb-2">
+                            <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#3b82f6', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <i className="bi bi-person-badge-fill"></i> Substituição de EPIs por Colaborador
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {(() => {
+                                    // Agrupa os itens pelo nome do colaborador
+                                    const trocasAgrupadas = trocasEmAlerta.reduce((acc, t) => {
+                                        if (!acc[t.colaborador_nome]) acc[t.colaborador_nome] = [];
+                                        acc[t.colaborador_nome].push(t);
+                                        return acc;
+                                    }, {});
+
+                                    return Object.keys(trocasAgrupadas).map(nome => {
+                                        const epis = trocasAgrupadas[nome];
+                                        const isExpandido = colaboradorExpandido === nome;
+                                        const temAtrasado = epis.some(e => calcularDiasVencimento(e.proxima_troca) <= 0);
+
+                                        return (
+                                            <div key={nome} style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', borderLeft: `4px solid ${temAtrasado ? '#ef4444' : '#3b82f6'}`, borderRadius: '8px', overflow: 'hidden' }}>
+                                                {/* Cabeçalho Clicável */}
+                                                <div
+                                                    onClick={() => setColaboradorExpandido(isExpandido ? null : nome)}
+                                                    style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isExpandido ? 'rgba(59,130,246,0.05)' : 'transparent' }}
+                                                >
+                                                    <div style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        <i className={`bi ${isExpandido ? 'bi-chevron-down' : 'bi-chevron-right'}`} style={{ color: '#3b82f6', fontSize: 12 }}></i>
+                                                        {nome}
+                                                    </div>
+                                                    <span style={{ background: temAtrasado ? 'rgba(239,68,68,0.12)' : 'rgba(59,130,246,0.12)', color: temAtrasado ? '#ef4444' : '#3b82f6', padding: '2px 8px', borderRadius: '20px', fontWeight: 700, fontSize: '11px' }}>
+                                                        {epis.length} item(ns)
+                                                    </span>
+                                                </div>
+
+                                                {/* Lista Interna (EPIs Específicos) */}
+                                                {isExpandido && (
+                                                    <div style={{ padding: '8px 14px 12px 34px', borderTop: '1px solid var(--border)' }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                            {epis.map(t => {
+                                                                const dias = calcularDiasVencimento(t.proxima_troca);
+                                                                const isVencido = dias < 0;
+                                                                const isHoje = dias === 0;
+                                                                const corTag = isVencido || isHoje ? '#ef4444' : '#3b82f6';
+                                                                const dataFmt = new Date(t.proxima_troca.split('T')[0] + 'T12:00:00').toLocaleDateString('pt-BR');
+
+                                                                return (
+                                                                    <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed var(--border)', paddingBottom: '6px', paddingTop: '4px' }}>
+                                                                        <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                                                                            <i className="bi bi-arrow-return-right me-1" style={{ opacity: 0.5 }}></i> {t.epi_nome || t.nome_manual}
+                                                                        </div>
+                                                                        <span style={{ color: corTag, fontWeight: 700, fontSize: '11px' }}>
+                                                                            {isVencido ? `ATRASADO (${dataFmt})` : isHoje ? 'HOJE' : `EM ${dias} DIAS (${dataFmt})`}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                        </div>
+                    )}
+
+                    {((abaAlerta === 'estoque' && itensEmAlerta.length === 0) ||
+                      (abaAlerta === 'ca' && casEmAlerta.length === 0) ||
+                      (abaAlerta === 'trocas' && trocasEmAlerta.length === 0) ||
+                      (abaAlerta === 'todos' && itensEmAlerta.length === 0 && casEmAlerta.length === 0 && trocasEmAlerta.length === 0)) && (
+                        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                            <i className="bi bi-check-circle-fill text-success d-block mb-2" style={{ fontSize: '32px' }}></i>
+                            <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Nenhum alerta pendente nesta categoria!</div>
+                        </div>
+                    )}
+                </Modal.Body>
+            </Modal>
         </div>
     );
 }
