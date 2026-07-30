@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Usuarios from './pages/Usuarios';
 import FichaEpi from './pages/FichaEpi';
 import CalculadoraInstalacao from './pages/CalculadoraInstalacao';
+import Orcamentos from './pages/Orcamentos';
 
 // Importação da API
 import api from './services/api';
@@ -29,6 +30,8 @@ const pageTitles = {
   '/':               { title: 'Estoque Atual',  sub: 'Inventário e controle de materiais'        },
   '/movimentacoes':  { title: 'Movimentações',  sub: 'Histórico de retiradas e devoluções'       },
   '/colaboradores':  { title: 'Colaboradores',  sub: 'Gerenciamento de equipe'                   },
+  '/calculadora':    { title: 'Calculadora',    sub: 'Dimensionamento de materiais de instalação'},
+  '/orcamentos':     { title: 'Orçamentos',     sub: 'Montador de orçamentos e cotações'         },
   '/relatorios':     { title: 'Relatórios',     sub: 'Análises e exportações'                    },
   '/usuarios':       { title: 'Acessos',        sub: 'Gerenciamento de usuários do sistema'      },
 };
@@ -134,19 +137,25 @@ function Layout({ onLogout, user }) {
             </NavLink>
           ))}
 
+          {/* Links Especiais com Destaque */}
+          <NavLink to="/calculadora" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} style={{ borderLeft: '4px solid #3b82f6', background: 'rgba(59,130,246,0.05)', marginTop: '8px' }}>
+            <i className="bi bi-calculator nav-icon" style={{ color: '#3b82f6' }}></i> Calculadora para Instalação
+          </NavLink>
+
+          <NavLink to="/orcamentos" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} style={{ borderLeft: '4px solid #10b981', background: 'rgba(16,185,129,0.05)' }}>
+            <i className="bi bi-cart-plus nav-icon" style={{ color: '#10b981' }}></i> Fazer Orçamentos
+          </NavLink>
+
           {user?.perfil === 'ADMIN' && (
             <NavLink
               to="/usuarios"
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              style={{ marginTop: '8px' }}
             >
-              <i className="bi bi-key-fill nav-icon"></i>
+              <i className="bi bi-shield-lock-fill nav-icon"></i>
               Acessos (Senhas)
             </NavLink>
           )}
-
-          <NavLink to="/calculadora" className="nav-item" style={{ borderLeft: '4px solid #3b82f6', background: 'rgba(59,130,246,0.05)' }}>
-    <i className="bi bi-calculator me-2" style={{ color: '#3b82f6' }}></i> Calculadora para Instalação
-  </NavLink>
         </div>
 
         {/* Footer / User card */}
@@ -248,7 +257,8 @@ function Layout({ onLogout, user }) {
             <Route path="/"              element={<Estoque       user={user} />} />
             <Route path="/movimentacoes" element={<Movimentacoes user={user} />} />
             <Route path="/colaboradores" element={<Colaboradores user={user} />} />
-            <Route path="/calculadora" element={<CalculadoraInstalacao />} />
+            <Route path="/calculadora"   element={<CalculadoraInstalacao />} />
+            <Route path="/orcamentos"    element={<Orcamentos />} />
             <Route path="/relatorios"    element={<Relatorios    user={user} />} />
             <Route path="/usuarios"      element={<Usuarios      user={user} />} />
             <Route path="/colaboradores/ficha/:id" element={<FichaEpi user={user} />} />
@@ -471,24 +481,19 @@ function Layout({ onLogout, user }) {
   );
 }
 
-// No arquivo src/App.jsx
-
 function App() {
   const [user, setUser] = useState(() => {
-    // Trocado de localStorage para sessionStorage
     const saved = sessionStorage.getItem('@Centriar:user');
     return saved ? JSON.parse(saved) : null;
   });
 
   const handleLogin = (userData, token) => {
-    // Salva na sessão atual. Ao fechar a aba/navegador, isso é apagado.
     sessionStorage.setItem('@Centriar:token', token);
     sessionStorage.setItem('@Centriar:user', JSON.stringify(userData));
     setUser(userData);
   };
 
   const handleLogout = () => {
-    // Limpa a sessão ao sair
     sessionStorage.clear();
     setUser(null);
   };
