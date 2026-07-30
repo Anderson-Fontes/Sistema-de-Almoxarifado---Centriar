@@ -5,7 +5,7 @@
 <br/>
 
 [![Status](https://img.shields.io/badge/status-em%20desenvolvimento-f59e0b?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Anderson-Fontes/Sistema-de-Almoxarifado---Centriar)
-[![Version](https://img.shields.io/badge/vers%C3%A3o-1.1.0-3b82f6?style=for-the-badge)](https://github.com/Anderson-Fontes/Sistema-de-Almoxarifado---Centriar)
+[![Version](https://img.shields.io/badge/vers%C3%A3o-1.2.0-3b82f6?style=for-the-badge)](https://github.com/Anderson-Fontes/Sistema-de-Almoxarifado---Centriar)
 [![Feito com dedicação](https://img.shields.io/badge/feito%20com-%E2%9D%A4-ef4444?style=for-the-badge)](https://github.com/Anderson-Fontes)
 
 <br/>
@@ -17,11 +17,12 @@
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)](https://developer.mozilla.org/pt-BR/docs/Web/CSS)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com)
+[![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)](https://jwt.io)
 [![pgAdmin](https://img.shields.io/badge/pgAdmin-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.pgadmin.org)
 
 <br/>
 
-> **Plataforma completa para gestão de almoxarifado, controle de estoque e monitoramento de EPIs.**
+> **Plataforma completa para gestão de almoxarifado, controle de estoque, orçamentos e monitoramento de EPIs.**
 > Desenvolvida com foco em organização, rastreabilidade, segurança do trabalho e eficiência operacional.
 
 <br/>
@@ -38,9 +39,14 @@
 <summary><b>Ver todos os tópicos</b></summary>
 
 - [📖 Visão Geral](#-visão-geral)
+- [🆕 Novidades da Versão 1.2.0](#-novidades-da-versão-120)
 - [🎯 Objetivos](#-objetivos)
 - [✨ Funcionalidades](#-funcionalidades)
-- [🦺 Ficha de EPI](#-ficha-de-epi--nova-funcionalidade)
+- [🦺 Ficha de EPI](#-ficha-de-epi)
+- [🧮 Calculadora de Materiais](#-calculadora-de-materiais)
+- [📑 Criação de Orçamentos](#-criação-de-orçamentos)
+- [🔔 Sistema de Alertas](#-sistema-de-alertas)
+- [🔐 Segurança e Autenticação](#-segurança-e-autenticação)
 - [🧱 Arquitetura](#-arquitetura)
 - [🛠️ Stack Tecnológica](#️-stack-tecnológica)
 - [📂 Estrutura do Projeto](#-estrutura-do-projeto)
@@ -61,7 +67,7 @@
 
 <img align="right" width="320" src="https://media.giphy.com/media/qgQUggAC3Pfv687qPC/giphy.gif" />
 
-O **Sistema de Almoxarifado — Centriar** é uma aplicação **full stack** desenvolvida para gerenciar de forma eficiente o controle de materiais, movimentações de estoque, organização de recursos e — agora — o **monitoramento completo de EPIs (Equipamentos de Proteção Individual)** de uma instituição.
+O **Sistema de Almoxarifado — Centriar** é uma aplicação **full stack** desenvolvida para gerenciar de forma eficiente o controle de materiais, movimentações de estoque, criação de orçamentos, cálculo de materiais e o **monitoramento completo de EPIs (Equipamentos de Proteção Individual)** de uma instituição.
 
 A solução foi projetada para atender **cenários reais de gestão**, garantindo:
 
@@ -70,11 +76,52 @@ A solução foi projetada para atender **cenários reais de gestão**, garantind
 - ✅ Melhoria nos **processos internos** de almoxarifado
 - ✅ **Rastreabilidade** completa de entradas e saídas
 - ✅ **Controle individual** de EPIs por colaborador
+- ✅ **Estimativas rápidas** de consumo de materiais
+- ✅ **Geração ágil de orçamentos** para obras e serviços
+- ✅ **Alertas inteligentes** de estoque e vencimento
+- ✅ **Acesso seguro**, com autenticação reforçada
 - ✅ **Acesso rápido** ao histórico de movimentações e fichas de EPI
 
 Com uma interface moderna e responsiva construída em React, integrada a uma API REST em Node.js e banco de dados PostgreSQL, o sistema oferece controle total sobre o fluxo de materiais e a gestão de segurança dos trabalhadores em uma única plataforma.
 
 <br clear="right"/>
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
+
+## 🆕 Novidades da Versão 1.2.0
+
+<div align="center">
+<img src="https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif" width="260"/>
+
+> ### 🚀 Atualização 1.2.0 — Orçamentos, Cálculo de Materiais, Alertas e Segurança
+</div>
+
+Esta versão traz quatro grandes evoluções para o sistema, tornando o dia a dia do almoxarifado ainda mais completo, seguro e produtivo:
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <h3>🧮</h3>
+      <b>Calculadora de Materiais</b><br/>
+      Nova página para estimar automaticamente a quantidade de materiais necessária por projeto
+    </td>
+    <td align="center" width="25%">
+      <h3>📑</h3>
+      <b>Criação de Orçamentos</b><br/>
+      Novo módulo para gerar, versionar e acompanhar orçamentos com base no estoque disponível
+    </td>
+    <td align="center" width="25%">
+      <h3>🔔</h3>
+      <b>Alertas Aprimorados</b><br/>
+      Notificações mais inteligentes de estoque mínimo, EPIs vencidos e pendências
+    </td>
+    <td align="center" width="25%">
+      <h3>🔐</h3>
+      <b>Segurança de Login</b><br/>
+      Autenticação reforçada com JWT, hash de senha e proteção contra tentativas indevidas
+    </td>
+  </tr>
+</table>
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
 
@@ -84,13 +131,13 @@ Com uma interface moderna e responsiva construída em React, integrada a uma API
 
 | 🎯 Objetivo | 📋 Descrição |
 |---|---|
-| **Centralização** | Unificar todo o controle de estoque e EPIs em uma única plataforma |
-| **Automação** | Automatizar registros de entrada, saída e entrega de equipamentos |
-| **Rastreabilidade** | Garantir histórico completo de todas as movimentações e fichas de EPI |
+| **Centralização** | Unificar todo o controle de estoque, orçamentos e EPIs em uma única plataforma |
+| **Automação** | Automatizar registros de entrada, saída, entrega de equipamentos e cálculo de materiais |
+| **Rastreabilidade** | Garantir histórico completo de movimentações, orçamentos e fichas de EPI |
 | **Conformidade** | Apoiar o cumprimento das normas de segurança do trabalho (NRs) |
-| **Análise** | Facilitar consultas, filtros e análises do estoque e EPIs |
-| **Eficiência** | Melhorar a produtividade e reduzir erros operacionais |
-| **Segurança** | Controle de acesso com autenticação de usuários |
+| **Análise** | Facilitar consultas, filtros e análises do estoque, EPIs e orçamentos |
+| **Eficiência** | Melhorar a produtividade e reduzir erros operacionais e de estimativa |
+| **Segurança** | Controle de acesso robusto com autenticação e proteção de sessão |
 
 </div>
 
@@ -140,9 +187,26 @@ Com uma interface moderna e responsiva construída em React, integrada a uma API
       Monitoramento individual de EPIs por colaborador, com controle de entrega e validade
     </td>
     <td align="center" width="33%">
-      <h3>🧭</h3>
-      <b>Interface Responsiva</b><br/>
-      Design moderno construído em React, adaptado para desktop e mobile
+      <h3>🧮</h3>
+      <b>Calculadora de Materiais</b><br/>
+      Estimativa automática de quantidades e custos com base no escopo do projeto
+    </td>
+    <td align="center" width="33%">
+      <h3>📑</h3>
+      <b>Criação de Orçamentos</b><br/>
+      Geração de propostas com itens, quantidades e valores a partir do estoque
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <h3>🔔</h3>
+      <b>Alertas Inteligentes</b><br/>
+      Avisos de estoque mínimo, EPIs vencidos e orçamentos pendentes
+    </td>
+    <td align="center" width="33%">
+      <h3>🔐</h3>
+      <b>Login Seguro</b><br/>
+      Autenticação com JWT, hash de senha e bloqueio por tentativas indevidas
     </td>
     <td align="center" width="33%">
       <h3>📊</h3>
@@ -154,12 +218,11 @@ Com uma interface moderna e responsiva construída em React, integrada a uma API
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
 
-## 🦺 Ficha de EPI — Nova Funcionalidade
+## 🦺 Ficha de EPI
 
 <div align="center">
 
-> ### 🆕 Versão 1.1.0
-> **Monitoramento completo de Equipamentos de Proteção Individual por colaborador.**
+> ### Monitoramento completo de Equipamentos de Proteção Individual por colaborador
 
 </div>
 
@@ -200,24 +263,6 @@ A **Ficha de EPI** é um módulo dedicado ao controle e rastreamento de todos os
   </tr>
 </table>
 
-### 📐 Modelo de Dados — Ficha de EPI
-
-```
-┌─────────────────────┐       ┌──────────────────────────┐       ┌───────────────────┐
-│    colaboradores    │       │       fichas_epi          │       │      epis         │
-│─────────────────────│       │──────────────────────────│       │───────────────────│
-│ id                  │◄──────│ colaborador_id            │  ┌───►│ id                │
-│ nome                │       │ epi_id               ────►┘  │   │ nome              │
-│ matricula           │       │ quantidade                │   │   │ descricao         │
-│ setor               │       │ data_entrega              │   │   │ numero_ca         │
-│ funcao              │       │ data_validade             │   │   │ categoria         │
-│ ativo               │       │ data_devolucao            │   │   │ unidade           │
-└─────────────────────┘       │ assinatura_recebimento    │   └───┘                   │
-                              │ observacao                │
-                              │ criado_em                 │
-                              └──────────────────────────┘
-```
-
 ### 🌐 Endpoints da Ficha de EPI
 
 <div align="center">
@@ -256,6 +301,260 @@ A **Ficha de EPI** é um módulo dedicado ao controle e rastreamento de todos os
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
 
+## 🧮 Calculadora de Materiais
+
+<div align="center">
+
+> ### 🆕 Novo em v1.2.0
+> **Estimativa automática de materiais e custos a partir dos dados do estoque.**
+
+</div>
+
+A **Calculadora de Materiais** permite que o usuário informe as dimensões ou o escopo de um projeto (área, metragem, unidades necessárias etc.) e receba automaticamente a lista de materiais e quantidades estimadas, já cruzada com o estoque disponível no almoxarifado.
+
+### 🔍 O que a Calculadora de Materiais faz?
+
+<table>
+  <tr>
+    <td width="50%">
+      <h4>📐 Estimativa por Escopo</h4>
+      Calcula a quantidade necessária de cada material com base em parâmetros como área, comprimento ou unidades do projeto.
+    </td>
+    <td width="50%">
+      <h4>📦 Cruzamento com Estoque</h4>
+      Compara a quantidade estimada com o saldo disponível, indicando o que já está em estoque e o que precisa ser comprado.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h4>💰 Estimativa de Custo</h4>
+      Apresenta o custo estimado total com base no valor unitário cadastrado de cada material.
+    </td>
+    <td width="50%">
+      <h4>➡️ Envio Direto para Orçamento</h4>
+      O resultado do cálculo pode ser enviado diretamente para o módulo de Criação de Orçamentos.
+    </td>
+  </tr>
+</table>
+
+### 🌐 Endpoints da Calculadora de Materiais
+
+<div align="center">
+
+| Método | Rota | Descrição |
+|:---:|---|---|
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/calculadora/parametros` | Lista os tipos de cálculo e parâmetros disponíveis |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/calculadora/estimar` | Retorna a lista de materiais e quantidades estimadas |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/calculadora/enviar-orcamento` | Envia o resultado estimado direto para um novo orçamento |
+
+</div>
+
+<details>
+<summary><b>📌 Exemplo de payload — Estimativa de Materiais</b></summary>
+
+<br/>
+
+```json
+{
+  "tipo_calculo": "area_pintura",
+  "area_m2": 45,
+  "demao": 2,
+  "material_base_id": 12
+}
+```
+
+**Resposta esperada:**
+
+```json
+{
+  "materiais_estimados": [
+    { "produto_id": 12, "nome": "Tinta Acrílica 18L", "quantidade": 3, "disponivel_estoque": 2 },
+    { "produto_id": 27, "nome": "Rolo de Pintura 9\"", "quantidade": 4, "disponivel_estoque": 10 }
+  ],
+  "custo_total_estimado": 842.50
+}
+```
+
+</details>
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
+
+## 📑 Criação de Orçamentos
+
+<div align="center">
+
+> ### 🆕 Novo em v1.2.0
+> **Geração, versionamento e acompanhamento de orçamentos direto do almoxarifado.**
+
+</div>
+
+O módulo de **Criação de Orçamentos** permite montar propostas completas com itens de estoque, quantidades, valores unitários e observações, além de acompanhar o status de cada orçamento (rascunho, enviado, aprovado ou recusado).
+
+### 🔍 O que é possível fazer na Criação de Orçamentos?
+
+<table>
+  <tr>
+    <td width="50%">
+      <h4>🧾 Montagem de Itens</h4>
+      Adicione produtos do estoque ao orçamento, com quantidade, valor unitário e desconto por item.
+    </td>
+    <td width="50%">
+      <h4>🔄 Versionamento</h4>
+      Cada alteração gera uma nova versão do orçamento, preservando o histórico de negociação.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h4>📊 Status de Acompanhamento</h4>
+      Acompanhe o ciclo de vida do orçamento: rascunho → enviado → aprovado/recusado.
+    </td>
+    <td width="50%">
+      <h4>🧮 Integração com a Calculadora</h4>
+      Receba automaticamente os itens calculados na Calculadora de Materiais.
+    </td>
+  </tr>
+</table>
+
+### 📐 Modelo de Dados — Orçamentos
+
+```
+┌─────────────────────┐       ┌──────────────────────────┐       ┌───────────────────┐
+│      clientes       │       │        orcamentos          │       │  orcamento_itens  │
+│─────────────────────│       │────────────────────────────│       │───────────────────│
+│ id                  │◄──────│ cliente_id                 │◄──────│ orcamento_id      │
+│ nome                │       │ id                          │──────►│ produto_id        │
+│ contato             │       │ status                      │       │ quantidade        │
+│ empresa             │       │ valor_total                 │       │ valor_unitario    │
+│ criado_em           │       │ versao                      │       │ desconto          │
+└─────────────────────┘       │ data_criacao                │       └───────────────────┘
+                              │ data_validade                │
+                              │ observacoes                  │
+                              └──────────────────────────────┘
+```
+
+### 🌐 Endpoints de Orçamentos
+
+<div align="center">
+
+| Método | Rota | Descrição |
+|:---:|---|---|
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/orcamentos` | Lista todos os orçamentos |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/orcamentos` | Cria um novo orçamento |
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/orcamentos/:id` | Retorna os detalhes de um orçamento |
+| ![PUT](https://img.shields.io/badge/-PUT-fca130?style=flat-square) | `/orcamentos/:id` | Atualiza um orçamento (nova versão) |
+| ![PUT](https://img.shields.io/badge/-PUT-fca130?style=flat-square) | `/orcamentos/:id/status` | Atualiza o status (enviado/aprovado/recusado) |
+| ![DELETE](https://img.shields.io/badge/-DELETE-f93e3e?style=flat-square) | `/orcamentos/:id` | Remove um orçamento |
+
+</div>
+
+<details>
+<summary><b>📌 Exemplo de payload — Criação de Orçamento</b></summary>
+
+<br/>
+
+```json
+{
+  "cliente_id": 8,
+  "itens": [
+    { "produto_id": 12, "quantidade": 3, "valor_unitario": 189.90, "desconto": 0 },
+    { "produto_id": 27, "quantidade": 4, "valor_unitario": 24.50, "desconto": 5 }
+  ],
+  "data_validade": "2026-06-01",
+  "observacoes": "Orçamento gerado a partir da Calculadora de Materiais"
+}
+```
+
+</details>
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
+
+## 🔔 Sistema de Alertas
+
+<div align="center">
+
+> ### 🔧 Melhorado em v1.2.0
+> **Notificações mais inteligentes e configuráveis.**
+
+</div>
+
+O sistema de alertas foi reformulado para oferecer avisos mais precisos e acionáveis, reduzindo o risco de ruptura de estoque e de EPIs vencidos passarem despercebidos.
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <h3>📉</h3>
+      <b>Estoque Mínimo</b><br/>
+      Alerta automático quando um produto atinge o nível mínimo configurado
+    </td>
+    <td align="center" width="25%">
+      <h3>⏰</h3>
+      <b>EPI Próximo do Vencimento</h3></b><br/>
+      Aviso antecipado antes da data de validade de cada EPI entregue
+    </td>
+    <td align="center" width="25%">
+      <h3>📑</h3>
+      <b>Orçamento Pendente</b><br/>
+      Notificação de orçamentos aguardando resposta há mais tempo que o esperado
+    </td>
+    <td align="center" width="25%">
+      <h3>🎯</h3>
+      <b>Alertas Configuráveis</b><br/>
+      Definição de limites e prazos por categoria de produto ou tipo de EPI
+    </td>
+  </tr>
+</table>
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
+
+## 🔐 Segurança e Autenticação
+
+<div align="center">
+
+> ### 🔧 Melhorado em v1.2.0
+> **Login mais seguro, com autenticação reforçada.**
+
+</div>
+
+A segurança do login foi reforçada com práticas modernas de proteção de credenciais e de sessão:
+
+<table>
+  <tr>
+    <td width="50%">
+      <h4>🔑 Autenticação via JWT</h4>
+      Emissão de tokens de acesso com expiração configurável para cada sessão de usuário.
+    </td>
+    <td width="50%">
+      <h4>🔒 Hash de Senha</h4>
+      Senhas armazenadas com hash seguro, nunca em texto puro no banco de dados.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h4>🚫 Bloqueio por Tentativas</h4>
+      Limite de tentativas de login incorretas, com bloqueio temporário da conta.
+    </td>
+    <td width="50%">
+      <h4>🛡️ Middleware de Autorização</h4>
+      Validação do token em todas as rotas protegidas da API.
+    </td>
+  </tr>
+</table>
+
+### 🌐 Endpoints de Autenticação
+
+<div align="center">
+
+| Método | Rota | Descrição |
+|:---:|---|---|
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/auth/login` | Autentica o usuário e retorna o token JWT |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/auth/logout` | Invalida a sessão atual do usuário |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/auth/refresh` | Renova o token de acesso |
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/auth/me` | Retorna os dados do usuário autenticado |
+
+</div>
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
+
 ## 🧱 Arquitetura
 
 <div align="center">
@@ -265,19 +564,21 @@ A **Ficha de EPI** é um módulo dedicado ao controle e rastreamento de todos os
 │                    🌐 CLIENT LAYER                      │
 │              React + JavaScript + CSS3 + Axios           │
 └──────────────────────────┬──────────────────────────────┘
-                           │  HTTP / REST
+                           │  HTTP / REST (JWT no header)
                            ▼
 ┌─────────────────────────────────────────────────────────┐
 │                    ⚙️  API LAYER                        │
 │              Node.js + Express + Controllers            │
-│    Autenticação · Validações · Regras de Negócio        │
+│   Autenticação (JWT) · Validações · Regras de Negócio   │
+│   Alertas · Calculadora de Materiais · Orçamentos       │
 └──────────────────────────┬──────────────────────────────┘
                            │  SQL Queries
                            ▼
 ┌─────────────────────────────────────────────────────────┐
 │                  🗄️  DATABASE LAYER                     │
 │              PostgreSQL — gerenciado via pgAdmin         │
-│   Produtos · Movimentações · EPIs · Colaboradores        │
+│ Produtos · Movimentações · EPIs · Colaboradores          │
+│ Orçamentos · Clientes · Usuários                          │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -312,6 +613,8 @@ A **Ficha de EPI** é um módulo dedicado ao controle e rastreamento de todos os
 | ![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white) | Runtime JavaScript server-side |
 | ![Express](https://img.shields.io/badge/-Express-000000?logo=express&logoColor=white) | Framework web e roteamento da API |
 | ![JavaScript](https://img.shields.io/badge/-JavaScript-F7DF1E?logo=javascript&logoColor=black) | Linguagem principal do servidor |
+| ![JWT](https://img.shields.io/badge/-JWT-000000?logo=jsonwebtokens&logoColor=white) | Autenticação e autorização de rotas |
+| ![bcrypt](https://img.shields.io/badge/-bcrypt-004225?logo=npm&logoColor=white) | Hash seguro de senhas |
 
 </details>
 
@@ -349,15 +652,23 @@ A **Ficha de EPI** é um módulo dedicado ao controle e rastreamento de todos os
  │
  ┣ 📂 backend
  ┃ ┣ 📄 server.js              # Ponto de entrada do servidor Express + rotas
- ┃ ┗ 📄 database.js            # Configuração e conexão com o PostgreSQL
+ ┃ ┣ 📄 database.js            # Configuração e conexão com o PostgreSQL
+ ┃ ┣ 📂 middlewares
+ ┃ ┃ ┗ 📄 auth.js              # 🆕 Middleware de validação de JWT
+ ┃ ┗ 📂 services
+ ┃   ┣ 📄 calculadora.js       # 🆕 Regras de cálculo de materiais
+ ┃   ┗ 📄 alertas.js           # 🔧 Regras de disparo de alertas
  ┃
  ┣ 📂 frontend
  ┃ ┣ 📂 src
  ┃ ┃ ┣ 📂 pages                # Páginas da aplicação (React)
  ┃ ┃ ┃ ┣ 📄 Produtos.jsx       # Gestão de produtos
  ┃ ┃ ┃ ┣ 📄 Movimentacoes.jsx  # Entradas e saídas
- ┃ ┃ ┃ ┣ 📄 FichaEPI.jsx       # 🆕 Ficha de EPI por colaborador
- ┃ ┃ ┃ ┗ 📄 Dashboard.jsx      # Visão geral do almoxarifado
+ ┃ ┃ ┃ ┣ 📄 FichaEPI.jsx       # Ficha de EPI por colaborador
+ ┃ ┃ ┃ ┣ 📄 CalculadoraMateriais.jsx  # 🆕 Estimativa de materiais e custos
+ ┃ ┃ ┃ ┣ 📄 Orcamentos.jsx     # 🆕 Criação e acompanhamento de orçamentos
+ ┃ ┃ ┃ ┣ 📄 Login.jsx          # 🔧 Autenticação reforçada (JWT)
+ ┃ ┃ ┃ ┗ 📄 Dashboard.jsx      # Visão geral do almoxarifado e alertas
  ┃ ┃ ┣ 📂 components           # Componentes reutilizáveis
  ┃ ┃ ┣ 📂 services             # Camada de comunicação com a API (Axios)
  ┃ ┃ ┗ 📄 App.jsx              # Componente raiz da aplicação
@@ -383,7 +694,7 @@ cd Sistema-de-Almoxarifado---Centriar
 
 1. Abra o **pgAdmin** e crie um banco de dados chamado `almoxarifado`
 2. Execute o script SQL de criação das tabelas localizado na pasta do projeto
-3. O script já inclui as tabelas do módulo de **Ficha de EPI** (`colaboradores`, `epis`, `fichas_epi`)
+3. O script já inclui as tabelas do módulo de **Ficha de EPI** (`colaboradores`, `epis`, `fichas_epi`) e as novas tabelas de **Orçamentos** (`clientes`, `orcamentos`, `orcamento_itens`)
 
 ### 3️⃣ Configure as variáveis de ambiente do Backend
 
@@ -396,6 +707,11 @@ DB_USER=postgres
 DB_PASSWORD=sua_senha
 DB_NAME=almoxarifado
 PORT=3333
+
+# 🆕 Autenticação
+JWT_SECRET=sua_chave_secreta
+JWT_EXPIRES_IN=1h
+LOGIN_MAX_ATTEMPTS=5
 ```
 
 ### 4️⃣ Execute o Backend
@@ -453,6 +769,46 @@ npm run dev
 
 </div>
 
+### 🧮 Módulo de Calculadora de Materiais
+
+<div align="center">
+
+| Método | Rota | Descrição |
+|:---:|---|---|
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/calculadora/parametros` | Lista tipos de cálculo disponíveis |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/calculadora/estimar` | Retorna estimativa de materiais e custos |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/calculadora/enviar-orcamento` | Envia a estimativa para um novo orçamento |
+
+</div>
+
+### 📑 Módulo de Orçamentos
+
+<div align="center">
+
+| Método | Rota | Descrição |
+|:---:|---|---|
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/orcamentos` | Lista todos os orçamentos |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/orcamentos` | Cria um novo orçamento |
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/orcamentos/:id` | Detalha um orçamento |
+| ![PUT](https://img.shields.io/badge/-PUT-fca130?style=flat-square) | `/orcamentos/:id` | Atualiza um orçamento (nova versão) |
+| ![PUT](https://img.shields.io/badge/-PUT-fca130?style=flat-square) | `/orcamentos/:id/status` | Atualiza status do orçamento |
+| ![DELETE](https://img.shields.io/badge/-DELETE-f93e3e?style=flat-square) | `/orcamentos/:id` | Remove um orçamento |
+
+</div>
+
+### 🔐 Módulo de Autenticação
+
+<div align="center">
+
+| Método | Rota | Descrição |
+|:---:|---|---|
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/auth/login` | Autentica o usuário e retorna o token JWT |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/auth/logout` | Invalida a sessão atual |
+| ![POST](https://img.shields.io/badge/-POST-49cc90?style=flat-square) | `/auth/refresh` | Renova o token de acesso |
+| ![GET](https://img.shields.io/badge/-GET-61affe?style=flat-square) | `/auth/me` | Retorna dados do usuário autenticado |
+
+</div>
+
 <details>
 <summary><b>📌 Exemplo de payload — Produto</b></summary>
 
@@ -489,20 +845,24 @@ npm run dev
 </details>
 
 <details>
-<summary><b>📌 Exemplo de payload — Ficha de EPI</b></summary>
+<summary><b>📌 Exemplo de payload — Login</b></summary>
 
 <br/>
 
 ```json
 {
-  "colaborador_id": 5,
-  "epi_id": 3,
-  "quantidade": 2,
-  "data_entrega": "2026-04-14",
-  "data_validade": "2027-04-14",
-  "numero_ca": "12345",
-  "assinatura_recebimento": true,
-  "observacao": "Substituição por desgaste"
+  "email": "usuario@centriar.com",
+  "senha": "********"
+}
+```
+
+**Resposta esperada:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expira_em": "2026-07-30T15:00:00Z",
+  "usuario": { "id": 1, "nome": "Anderson Fontes", "email": "usuario@centriar.com" }
 }
 ```
 
@@ -524,10 +884,11 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 │ nome         │       │ tipo (entrada/   │       │ nome         │
 │ codigo       │       │       saida)     │       │ email        │
 │ categoria    │       │ quantidade       │       │ senha_hash   │
-│ quantidade   │       │ observacao       │       │ criado_em    │
-│ unidade      │       │ data             │       └──────────────┘
-│ localizacao  │       │ criado_em        │
-│ criado_em    │       └──────────────────┘
+│ quantidade   │       │ observacao       │       │ tentativas   │  🔧
+│ unidade      │       │ data             │       │ bloqueado_ate│  🔧
+│ localizacao  │       │ criado_em        │       │ criado_em    │
+│ estoque_min  │  🔧    └──────────────────┘       └──────────────┘
+│ criado_em    │
 └──────────────┘
 
 ┌──────────────────┐       ┌──────────────────────────┐       ┌──────────────┐
@@ -543,7 +904,22 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 └──────────────────┘       │ observacao                │      └──────────────┘
                            │ criado_em                 │
                            └──────────────────────────┘
+
+┌─────────────────────┐       ┌──────────────────────────┐       ┌───────────────────┐
+│      clientes        │       │        orcamentos          │      │  orcamento_itens  │  🆕
+│──────────────────────│       │────────────────────────────│      │───────────────────│
+│ id                   │◄──────│ cliente_id                 │◄─────│ orcamento_id      │
+│ nome                 │       │ id                          │─────►│ produto_id        │
+│ contato              │       │ status                      │      │ quantidade        │
+│ empresa              │       │ valor_total                 │      │ valor_unitario    │
+│ criado_em            │       │ versao                      │      │ desconto          │
+└──────────────────────┘       │ data_criacao                │      └───────────────────┘
+                               │ data_validade                │
+                               │ observacoes                  │
+                               └──────────────────────────────┘
 ```
+
+🔧 = campo/tabela ajustado na v1.2.0 · 🆕 = tabela nova na v1.2.0
 
 </div>
 
@@ -565,6 +941,11 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 ║  React com       ║    ║  Frontend ↔ API  ║    ║  Ambiente com    ║
 ║  reuso de UI     ║    ║  via Axios       ║    ║     .env         ║
 ╚══════════════════╝    ╚══════════════════╝    ╚══════════════════╝
+╔══════════════════╗    ╔══════════════════╗
+║  Autenticação    ║    ║  Alertas Baseados║
+║  Stateless       ║    ║  em Regras de    ║
+║  com JWT         ║    ║  Negócio         ║
+╚══════════════════╝    ╚══════════════════╝
 ```
 
 </div>
@@ -578,13 +959,16 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 - [x] Registro de movimentações (entrada e saída)
 - [x] Consulta e filtragem de produtos
 - [x] Integração frontend ↔ API REST
-- [x] **Ficha de EPI por colaborador** ✅ _Novo em v1.1.0_
-- [x] **Registro de entrega e devolução de EPIs** ✅ _Novo em v1.1.0_
-- [x] **Controle de validade e CA dos EPIs** ✅ _Novo em v1.1.0_
-- [ ] Autenticação com JWT
-- [ ] Alertas automáticos de estoque mínimo e EPI vencido
+- [x] Ficha de EPI por colaborador
+- [x] Registro de entrega e devolução de EPIs
+- [x] Controle de validade e CA dos EPIs
+- [x] **Calculadora de materiais** ✅ _Novo em v1.2.0_
+- [x] **Criação de orçamentos** ✅ _Novo em v1.2.0_
+- [x] **Alertas automáticos de estoque mínimo e EPI vencido** ✅ _Melhorado em v1.2.0_
+- [x] **Autenticação com JWT** ✅ _Melhorado em v1.2.0_
 - [ ] Relatórios exportáveis em PDF/Excel
 - [ ] Dashboard com gráficos e indicadores
+- [ ] Aprovação de orçamento por link público
 - [ ] Deploy em produção
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png" width="100%">
@@ -595,7 +979,7 @@ O sistema utiliza **PostgreSQL** como banco de dados relacional, administrado vi
 
 ![Status Badge](https://img.shields.io/badge/%F0%9F%9F%A1%20Status-Em%20Desenvolvimento-f59e0b?style=for-the-badge)
 
-**O sistema está em evolução contínua**, com melhorias estruturais e novas funcionalidades sendo implementadas regularmente. A versão **1.1.0** trouxe o módulo completo de **Ficha de EPI**, adicionando uma camada de segurança e conformidade com as normas regulamentadoras ao sistema. Contribuições e feedbacks são sempre bem-vindos!
+**O sistema está em evolução contínua**, com melhorias estruturais e novas funcionalidades sendo implementadas regularmente. A versão **1.2.0** trouxe os módulos de **Calculadora de Materiais** e **Criação de Orçamentos**, além de melhorias significativas nos **alertas** e na **segurança de login** do sistema. Contribuições e feedbacks são sempre bem-vindos!
 
 </div>
 
