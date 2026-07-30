@@ -9,7 +9,9 @@ import Colaboradores from './pages/Colaboradores';
 import Relatorios from './pages/Relatorios';
 import Login from './pages/Login';
 import Usuarios from './pages/Usuarios';
-import FichaEpi from './pages/FichaEpi'; // ⬅️ NOVA PÁGINA IMPORTADA!
+import FichaEpi from './pages/FichaEpi';
+import CalculadoraInstalacao from './pages/CalculadoraInstalacao';
+import Orcamentos from './pages/Orcamentos';
 
 // Importação da API
 import api from './services/api';
@@ -28,6 +30,8 @@ const pageTitles = {
   '/':               { title: 'Estoque Atual',  sub: 'Inventário e controle de materiais'        },
   '/movimentacoes':  { title: 'Movimentações',  sub: 'Histórico de retiradas e devoluções'       },
   '/colaboradores':  { title: 'Colaboradores',  sub: 'Gerenciamento de equipe'                   },
+  '/calculadora':    { title: 'Calculadora',    sub: 'Dimensionamento de materiais de instalação'},
+  '/orcamentos':     { title: 'Orçamentos',     sub: 'Montador de orçamentos e cotações'         },
   '/relatorios':     { title: 'Relatórios',     sub: 'Análises e exportações'                    },
   '/usuarios':       { title: 'Acessos',        sub: 'Gerenciamento de usuários do sistema'      },
 };
@@ -133,12 +137,22 @@ function Layout({ onLogout, user }) {
             </NavLink>
           ))}
 
+          {/* Links Especiais com Destaque */}
+          <NavLink to="/calculadora" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} style={{ borderLeft: '4px solid #3b82f6', background: 'rgba(59,130,246,0.05)', marginTop: '8px' }}>
+            <i className="bi bi-calculator nav-icon" style={{ color: '#3b82f6' }}></i> Calculadora para Instalação
+          </NavLink>
+
+          <NavLink to="/orcamentos" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} style={{ borderLeft: '4px solid #10b981', background: 'rgba(16,185,129,0.05)' }}>
+            <i className="bi bi-cart-plus nav-icon" style={{ color: '#10b981' }}></i> Fazer Orçamentos
+          </NavLink>
+
           {user?.perfil === 'ADMIN' && (
             <NavLink
               to="/usuarios"
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              style={{ marginTop: '8px' }}
             >
-              <i className="bi bi-key-fill nav-icon"></i>
+              <i className="bi bi-shield-lock-fill nav-icon"></i>
               Acessos (Senhas)
             </NavLink>
           )}
@@ -243,9 +257,10 @@ function Layout({ onLogout, user }) {
             <Route path="/"              element={<Estoque       user={user} />} />
             <Route path="/movimentacoes" element={<Movimentacoes user={user} />} />
             <Route path="/colaboradores" element={<Colaboradores user={user} />} />
+            <Route path="/calculadora"   element={<CalculadoraInstalacao />} />
+            <Route path="/orcamentos"    element={<Orcamentos />} />
             <Route path="/relatorios"    element={<Relatorios    user={user} />} />
             <Route path="/usuarios"      element={<Usuarios      user={user} />} />
-            {/* ⬅️ NOVA ROTA DA FICHA DE EPI */}
             <Route path="/colaboradores/ficha/:id" element={<FichaEpi user={user} />} />
           </Routes>
         </div>
@@ -447,7 +462,7 @@ function Layout({ onLogout, user }) {
           <button
             onClick={onLogout}
             style={{
-              width: '100%', padding: '10px', borderRadius: 8, border: 'none',
+              width: '100%', padding: '10px', borderRadius: 8, 
               background: 'rgba(239,68,68,0.1)', color: '#f87171',
               fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 700,
               cursor: 'pointer', transition: 'all 0.15s',
@@ -468,18 +483,18 @@ function Layout({ onLogout, user }) {
 
 function App() {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('@Centriar:user');
+    const saved = sessionStorage.getItem('@Centriar:user');
     return saved ? JSON.parse(saved) : null;
   });
 
   const handleLogin = (userData, token) => {
-    localStorage.setItem('@Centriar:token', token);
-    localStorage.setItem('@Centriar:user', JSON.stringify(userData));
+    sessionStorage.setItem('@Centriar:token', token);
+    sessionStorage.setItem('@Centriar:user', JSON.stringify(userData));
     setUser(userData);
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
     setUser(null);
   };
 
