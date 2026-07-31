@@ -12,6 +12,7 @@ import Usuarios from './pages/Usuarios';
 import FichaEpi from './pages/FichaEpi';
 import CalculadoraInstalacao from './pages/CalculadoraInstalacao';
 import Orcamentos from './pages/Orcamentos';
+import Ferramentas from './pages/Ferramentas';
 
 // Importação da API
 import api from './services/api';
@@ -19,19 +20,24 @@ import api from './services/api';
 // Importação da logo
 import logoCentriar from './assets/logo_sem_fundo.png';
 
+// 💡 MENU PADRONIZADO: Todos os itens agora seguem a mesma lista e formatação visual
 const navItems = [
-  { to: '/',              icon: 'bi-box-seam',         label: 'Estoque Atual'  },
-  { to: '/movimentacoes', icon: 'bi-arrow-left-right', label: 'Movimentações'  },
-  { to: '/colaboradores', icon: 'bi-people',           label: 'Colaboradores'  },
-  { to: '/relatorios',    icon: 'bi-graph-up-arrow',   label: 'Relatórios'     },
+  { to: '/',              icon: 'bi-box-seam',         label: 'Estoque Atual' },
+  { to: '/movimentacoes', icon: 'bi-arrow-left-right', label: 'Movimentações' },
+  { to: '/orcamentos',    icon: 'bi-cart-plus',        label: 'Orçamentos' },
+  { to: '/ferramentas',   icon: 'bi-tools',            label: 'Ferramentas' },
+  { to: '/calculadora',   icon: 'bi-calculator',       label: 'Calculadora' },
+  { to: '/colaboradores', icon: 'bi-people',           label: 'Colaboradores' },
+  { to: '/relatorios',    icon: 'bi-graph-up-arrow',   label: 'Relatórios' },
 ];
 
 const pageTitles = {
   '/':               { title: 'Estoque Atual',  sub: 'Inventário e controle de materiais'        },
   '/movimentacoes':  { title: 'Movimentações',  sub: 'Histórico de retiradas e devoluções'       },
-  '/colaboradores':  { title: 'Colaboradores',  sub: 'Gerenciamento de equipe'                   },
-  '/calculadora':    { title: 'Calculadora',    sub: 'Dimensionamento de materiais de instalação'},
   '/orcamentos':     { title: 'Orçamentos',     sub: 'Montador de orçamentos e cotações'         },
+  '/ferramentas':    { title: 'Ferramentas',    sub: 'Gestão de patrimônio e empréstimos'        },
+  '/calculadora':    { title: 'Calculadora',    sub: 'Dimensionamento de materiais de instalação'},
+  '/colaboradores':  { title: 'Colaboradores',  sub: 'Gerenciamento de equipe'                   },
   '/relatorios':     { title: 'Relatórios',     sub: 'Análises e exportações'                    },
   '/usuarios':       { title: 'Acessos',        sub: 'Gerenciamento de usuários do sistema'      },
 };
@@ -125,6 +131,7 @@ function Layout({ onLogout, user }) {
         <div className="sidebar-section">
           <div className="sidebar-section-label">Menu principal</div>
 
+          {/* 💡 Loop Padronizado: Exibe todos os itens iguais */}
           {navItems.map(item => (
             <NavLink
               key={item.to}
@@ -137,20 +144,11 @@ function Layout({ onLogout, user }) {
             </NavLink>
           ))}
 
-          {/* Links Especiais com Destaque */}
-          <NavLink to="/calculadora" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} style={{ borderLeft: '4px solid #3b82f6', background: 'rgba(59,130,246,0.05)', marginTop: '8px' }}>
-            <i className="bi bi-calculator nav-icon" style={{ color: '#3b82f6' }}></i> Calculadora para Instalação
-          </NavLink>
-
-          <NavLink to="/orcamentos" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} style={{ borderLeft: '4px solid #10b981', background: 'rgba(16,185,129,0.05)' }}>
-            <i className="bi bi-cart-plus nav-icon" style={{ color: '#10b981' }}></i> Fazer Orçamentos
-          </NavLink>
-
+          {/* Botão de Admin no mesmo padrão */}
           {user?.perfil === 'ADMIN' && (
             <NavLink
               to="/usuarios"
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-              style={{ marginTop: '8px' }}
             >
               <i className="bi bi-shield-lock-fill nav-icon"></i>
               Acessos (Senhas)
@@ -259,6 +257,7 @@ function Layout({ onLogout, user }) {
             <Route path="/colaboradores" element={<Colaboradores user={user} />} />
             <Route path="/calculadora"   element={<CalculadoraInstalacao />} />
             <Route path="/orcamentos"    element={<Orcamentos />} />
+            <Route path="/ferramentas"   element={<Ferramentas />} />
             <Route path="/relatorios"    element={<Relatorios    user={user} />} />
             <Route path="/usuarios"      element={<Usuarios      user={user} />} />
             <Route path="/colaboradores/ficha/:id" element={<FichaEpi user={user} />} />
