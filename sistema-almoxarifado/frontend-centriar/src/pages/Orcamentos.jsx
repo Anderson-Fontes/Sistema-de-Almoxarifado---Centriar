@@ -50,6 +50,9 @@ export default function Orcamentos() {
   const [itensComparativo, setItensComparativo] = useState([]);
   const [formItemComp, setFormItemComp] = useState({ produto: '', quantidade: 1, precos: {} });
 
+  // Nome de quem está gerando o orçamento (aparece no cabeçalho do documento de aprovação)
+  const [responsavelOrcamento, setResponsavelOrcamento] = useState('');
+
   useEffect(() => {
     localStorage.setItem('@Centriar:orcamentos_historico', JSON.stringify(historicoOrcamentos));
   }, [historicoOrcamentos]);
@@ -87,6 +90,12 @@ export default function Orcamentos() {
   const alterarStatusItem = (id, novoStatus) => setItens(itens.map(item => item.id === id ? { ...item, statusItem: novoStatus } : item));
   const alterarSituacaoItem = (id, novaSituacao) => setItens(itens.map(item => item.id === id ? { ...item, situacaoCompra: novaSituacao } : item));
   const alterarQuantidadeItem = (id, novaQuantidade) => setItens(itens.map(item => item.id === id ? { ...item, quantidade: Math.max(1, novaQuantidade) } : item));
+  const alterarParcelasItem = (id, novasParcelas) => setItens(itens.map(item => item.id === id ? { ...item, parcelas: Math.max(1, novasParcelas) } : item));
+  const alterarValorItem = (id, novoValor) => {
+    const valorConvertido = parseFloat(novoValor.toString().replace(',', '.'));
+    if (isNaN(valorConvertido) || valorConvertido < 0) return; // ignora entrada inválida, mantém o valor anterior
+    setItens(itens.map(item => item.id === id ? { ...item, valorUnitario: valorConvertido } : item));
+  };
 
   const salvarOrcamento = () => {
     if (!nomeOrcamento.trim()) return alert('Por favor, informe um Nome/Identificação para este orçamento antes de salvar.');
@@ -98,6 +107,7 @@ export default function Orcamentos() {
 
     const orcamentoPayload = {
       id: orcamentoId || Date.now(), nome: nomeOrcamento, status: statusOrcamento,
+      responsavel: responsavelOrcamento,
       dataCriacao: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
       itens, totalGeral, totalAprovado, totalMensalGeral
     };
@@ -113,12 +123,13 @@ export default function Orcamentos() {
   };
 
   const limparFormularioOrcamento = () => {
-    setOrcamentoId(null); setNomeOrcamento(''); setStatusOrcamento('Pendente'); setItens([]);
+    setOrcamentoId(null); setNomeOrcamento(''); setStatusOrcamento('Pendente'); setItens([]); setResponsavelOrcamento('');
     setForm({ produto: '', loja: '', valorUnitario: '', quantidade: 1, formaPagamento: 'Pix', parcelas: 1, linkProduto: '', statusItem: 'Aprovado', situacaoCompra: 'Aguardando Compra' });
   };
 
   const carregarOrcamentoParaEdicao = (orcamento) => {
     setOrcamentoId(orcamento.id); setNomeOrcamento(orcamento.nome); setStatusOrcamento(orcamento.status);
+    setResponsavelOrcamento(orcamento.responsavel || '');
     const itensAtualizados = (orcamento.itens || []).map(i => ({ ...i, statusItem: i.statusItem || 'Aprovado', situacaoCompra: i.situacaoCompra || 'Aguardando Compra', quantidade: i.quantidade || 1 }));
     setItens(itensAtualizados);
     setAbaAtiva('editor');
@@ -213,6 +224,7 @@ export default function Orcamentos() {
   const totalGeral = itens.reduce((acc, item) => acc + (item.valorUnitario * item.quantidade), 0);
   const totalAprovado = itens.filter(i => i.statusItem === 'Aprovado').reduce((acc, item) => acc + (item.valorUnitario * item.quantidade), 0);
   const totalMensalGeral = itens.filter(i => i.statusItem !== 'Reprovado').reduce((acc, item) => acc + ((item.valorUnitario * item.quantidade) / item.parcelas), 0);
+  const temItemParcelado = itens.some(i => i.parcelas > 1 && i.statusItem !== 'Reprovado');
   const orcamentoPorLoja = itens.reduce((acc, item) => {
     const loja = item.loja || 'Outros';
     const totalItem = item.valorUnitario * item.quantidade;
@@ -276,22 +288,80 @@ export default function Orcamentos() {
       {/* ── ESTILOS EXCLUSIVOS PARA IMPRESSÃO / PDF ── */}
       <style>{`
         @media print {
+          /* 1. Define margens seguras para evitar corte nas bordas físicas */
+          @page {
+            margin: 10mm;
+          }
+
+          /* 2. Oculta elementos de interface */
           .sidebar, .topbar, .no-print, .nav-tabs-custom { display: none !important; }
-          body, .app-container, .main-content, .page-content { background: #ffffff !important; margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important; }
           
+          /* 3. Libera o fluxo da página (remove scroll bars e bloqueios de overflow) */
+          body, .app-container, .main-content, .page-content, .aba-editor, .aba-comparador, .aba-precos { 
+            background: #ffffff !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            width: 100% !important; 
+            display: block !important; 
+            overflow: visible !important; /* CRÍTICO: Previne corte horizontal */
+          }
+
+          /* Remove bloqueio de scroll de divs responsivas */
+          div[style*="overflowX"], div[style*="overflow-x"], div[style*="overflow"] {
+            overflow: visible !important;
+            overflow-x: visible !important;
+          }
+          
+          /* Oculta componentes não ativos */
           .aba-precos #documento-orcamento, .aba-precos #documento-comparador { display: none !important; }
           .aba-editor #documento-relatorio, .aba-editor #documento-comparador { display: none !important; }
           .aba-historico #documento-orcamento, .aba-historico #documento-relatorio, .aba-historico #documento-comparador { display: none !important; }
           .aba-comparador #documento-orcamento, .aba-comparador #documento-relatorio { display: none !important; }
           
-          #documento-orcamento, #documento-relatorio, #documento-comparador { background: #ffffff !important; padding: 0 !important; }
+          /* Cores e textos na impressão */
+          #documento-orcamento, #documento-relatorio, #documento-comparador { background: #ffffff !important; padding: 0 !important; overflow: visible !important; }
           #documento-orcamento h2, #documento-orcamento h3, #documento-orcamento div, #documento-orcamento td, #documento-orcamento th, #documento-orcamento span, #documento-orcamento strong { color: #0f172a !important; }
           .print-link { color: #2563eb !important; text-decoration: underline !important; font-weight: 600 !important; }
           .print-text-green, .print-text-green * { color: #047857 !important; }
+          .print-text-warning, .print-text-warning * { color: #b45309 !important; }
           .print-bg-green { background: #dcfce7 !important; border: 2px solid #10b981 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print-bg-gray { background: #f8fafc !important; border: 2px solid #cbd5e1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .print-card-loja { border: 1px solid #cbd5e1 !important; border-top: 4px solid #3b82f6 !important; background: #ffffff !important; margin-bottom: 24px !important; page-break-inside: avoid !important; }
+          .print-bg-warning { background: #fef3c7 !important; border: 2px solid #f59e0b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print-loja-header { background: #f1f5f9 !important; border-bottom: 1px solid #cbd5e1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .print-legenda { background: #f8fafc !important; border: 1px solid #cbd5e1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          
+          /* 4. REGRAS DE QUEBRA DE PÁGINA (PAGE-BREAKS) */
+          /* Impede que blocos inteiros sejam cortados no meio */
+          .print-card-loja, .print-assinatura { 
+            page-break-inside: avoid !important; 
+            break-inside: avoid !important; 
+          }
+          
+          .print-card-loja {
+            border: 1px solid #cbd5e1 !important; 
+            border-top: 4px solid #3b82f6 !important; 
+            background: #ffffff !important; 
+            margin-bottom: 24px !important; 
+          }
+          
+          /* Configuração inteligente das tabelas */
+          .print-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            page-break-inside: auto !important; /* A tabela pode quebrar entre páginas */
+          }
+          
+          /* Força o navegador a repetir o cabeçalho da tabela caso ela vá para outra página */
+          .print-table thead {
+            display: table-header-group !important; 
+          }
+          
+          /* Impede que uma única linha da tabela seja cortada ao meio */
+          .print-table tr {
+            page-break-inside: avoid !important; 
+            break-inside: avoid !important;
+          }
+          
           .print-table th { border-bottom: 2px solid #cbd5e1 !important; text-align: left; padding: 10px 8px; font-size: 12px; color: #64748b !important; text-transform: uppercase; }
           .print-table td { border-bottom: 1px solid #e2e8f0 !important; padding: 12px 8px; font-size: 13px; }
         }
@@ -325,11 +395,15 @@ export default function Orcamentos() {
             </div>
             <div style={{ padding: '20px' }}>
               <div className="row g-3 mb-4 p-3" style={{ background: 'var(--surface-2)', borderRadius: '10px', border: '1px solid var(--border)' }}>
-                <div className="col-md-6">
+                <div className="col-md-5">
                   <label className="form-label-custom">Nome do Orçamento / Identificação da Obra <span className="text-danger">*</span></label>
                   <input className="form-control-custom" type="text" value={nomeOrcamento} onChange={e => setNomeOrcamento(e.target.value)} placeholder="Ex: Obra Residencial - Cliente Silva" />
                 </div>
                 <div className="col-md-3">
+                  <label className="form-label-custom">Responsável pelo Orçamento</label>
+                  <input className="form-control-custom" type="text" value={responsavelOrcamento} onChange={e => setResponsavelOrcamento(e.target.value)} placeholder="Ex: Andersinho Fontes" />
+                </div>
+                <div className="col-md-2">
                   <label className="form-label-custom">Status Geral da Cotação</label>
                   <select className="form-select-custom fw-bold" value={statusOrcamento} onChange={e => setStatusOrcamento(e.target.value)} style={{ color: statusOrcamento === 'Aprovado' ? '#10b981' : statusOrcamento === 'Reprovado' ? '#ef4444' : '#f59e0b' }}>
                     <option value="Pendente">🟡 Pendente / Em Análise</option>
@@ -337,8 +411,8 @@ export default function Orcamentos() {
                     <option value="Reprovado">🔴 Reprovado / Recusado</option>
                   </select>
                 </div>
-                <div className="col-md-3 d-flex align-items-end">
-                  <button className="btn-primary-custom w-100" onClick={salvarOrcamento} style={{ justifyContent: 'center', padding: '10px' }}><i className="bi bi-save me-2"></i> {orcamentoId ? 'Atualizar Orçamento' : 'Salvar no Histórico'}</button>
+                <div className="col-md-2 d-flex align-items-end">
+                  <button className="btn-primary-custom w-100" onClick={salvarOrcamento} style={{ justifyContent: 'center', padding: '10px' }}><i className="bi bi-save me-2"></i> {orcamentoId ? 'Atualizar' : 'Salvar'}</button>
                 </div>
               </div>
 
@@ -353,44 +427,77 @@ export default function Orcamentos() {
                   <div className="col-md-11"><label className="form-label-custom"><i className="bi bi-link-45deg me-1"></i> Link da Loja / Anúncio do Produto (Opcional)</label><input className="form-control-custom" type="url" name="linkProduto" value={form.linkProduto} onChange={handleChange} placeholder="https://www.loja.com.br/produto-xyz" /></div>
                   <div className="col-md-1"><button type="submit" className="btn-primary-custom w-100" style={{ justifyContent: 'center', padding: '10px' }} title="Adicionar Item"><i className="bi bi-plus-lg"></i></button></div>
                 </div>
+                {/* 💡 Prévia em tempo real: o campo "Valor Unit." é sempre o preço CHEIO do produto.
+                    Esta prévia mostra, já na hora de digitar, o total do item e — se houver parcelamento —
+                    o valor de cada parcela, para não haver dúvida na hora de conferir o PDF depois. */}
+                {form.valorUnitario && !isNaN(parseFloat(form.valorUnitario.toString().replace(',', '.'))) && (
+                  <div className="mt-3 p-2 px-3" style={{ background: 'rgba(59,130,246,0.08)', border: '1px dashed #3b82f6', borderRadius: '8px', fontSize: '12.5px', color: 'var(--text-secondary)', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    <span>💰 Total deste item: <strong style={{ color: 'var(--text-primary)' }}>{formatarMoeda(parseFloat(form.valorUnitario.toString().replace(',', '.')) * (parseInt(form.quantidade) || 1))}</strong></span>
+                    {form.parcelas > 1 && (
+                      <span>📆 Cada parcela ({form.parcelas}x): <strong style={{ color: '#f59e0b' }}>{formatarMoeda((parseFloat(form.valorUnitario.toString().replace(',', '.')) * (parseInt(form.quantidade) || 1)) / form.parcelas)}</strong></span>
+                    )}
+                  </div>
+                )}
               </form>
             </div>
           </div>
 
           {itens.length > 0 && (
             <div id="documento-orcamento" className="print-area" style={{ background: 'var(--bg)', borderRadius: '12px', paddingBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              {/* ── CABEÇALHO DO DOCUMENTO PARA APROVAÇÃO ── */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                     <h2 style={{ margin: 0, fontWeight: 900, color: 'var(--text-primary)', fontSize: '22px' }}>{nomeOrcamento || 'Orçamento sem nome'}</h2>
                     <span className="badge" style={{ fontSize: '11px', background: statusOrcamento === 'Aprovado' ? 'rgba(16,185,129,0.15)' : statusOrcamento === 'Reprovado' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)', color: statusOrcamento === 'Aprovado' ? '#10b981' : statusOrcamento === 'Reprovado' ? '#ef4444' : '#f59e0b', border: `1px solid ${statusOrcamento === 'Aprovado' ? '#10b98140' : statusOrcamento === 'Reprovado' ? '#ef444440' : '#f59e0b40'}` }}>{statusOrcamento.toUpperCase()}</span>
                   </div>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>Itens cotados: {itens.length} | Aprovados: {itens.filter(i => i.statusItem === 'Aprovado').length}</div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>
+                    Itens cotados: {itens.length} | Aprovados: {itens.filter(i => i.statusItem === 'Aprovado').length}
+                    {responsavelOrcamento && <> | Responsável: <strong>{responsavelOrcamento}</strong></>}
+                    {' '}| Documento gerado em {dataAtual}
+                  </div>
                 </div>
                 <div className="no-print" style={{ display: 'flex', gap: '8px' }}><button className="btn-primary-custom" onClick={imprimirPagina} style={{ background: '#10b981', borderColor: '#059669', padding: '8px 16px' }}><i className="bi bi-printer-fill me-2"></i> Imprimir / PDF</button></div>
               </div>
 
+              {/* ── LEGENDA: explica os símbolos e a diferença entre "Valor Total" e "Valor da Parcela" ── */}
+              <div className="print-legenda" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', gap: '10px 24px', flexWrap: 'wrap' }}>
+                <span>🟢 <strong>Aprovado</strong> = confirmado para compra</span>
+                <span>🟡 <strong>Pendente</strong> = aguardando decisão</span>
+                <span>🔴 <strong>Reprovado</strong> = cancelado, não entra no total</span>
+                <span>💰 <strong>Valor Total do Item</strong> = preço cheio (unitário × quantidade)</span>
+                <span>📆 <strong>Nx de R$...</strong> = valor de cada parcela, já incluso no total acima dele</span>
+              </div>
+
               <div className="row g-3 mb-4">
-                <div className="col-md-4"><div className="print-bg-green" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '20px', textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}><div className="print-text-green" style={{ fontSize: '11px', color: '#059669', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>Valor Total Aprovado</div><div className="print-text-green" style={{ fontSize: '32px', fontWeight: 900, color: '#10b981', lineHeight: '1.2' }}>{formatarMoeda(totalAprovado)}</div></div></div>
-                <div className="col-md-4"><div className="print-bg-gray" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}><div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>Custo Bruto Cotado (100%)</div><div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.2' }}>{formatarMoeda(totalGeral)}</div></div></div>
-                <div className="col-md-4"><div className="print-bg-gray" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}><div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>Fatura Mensal Projetada</div><div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.2' }}>{formatarMoeda(totalMensalGeral)} <span style={{ fontSize: '14px', fontWeight: 700 }}>/mês</span></div></div></div>
+                <div className="col-md-4"><div className="print-bg-green" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '20px', textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}><div className="print-text-green" style={{ fontSize: '11px', color: '#059669', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>Valor Total Aprovado</div><div className="print-text-green" style={{ fontSize: '32px', fontWeight: 900, color: '#10b981', lineHeight: '1.2' }}>{formatarMoeda(totalAprovado)}</div><div style={{ fontSize: '10.5px', color: '#047857', marginTop: '4px' }}>Soma do preço cheio de todos os itens aprovados</div></div></div>
+                <div className="col-md-4"><div className="print-bg-gray" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}><div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>Custo Bruto Cotado (100%)</div><div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.2' }}>{formatarMoeda(totalGeral)}</div><div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '4px' }}>Inclui itens aprovados, pendentes e reprovados</div></div></div>
+                <div className="col-md-4"><div className="print-bg-warning" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '12px', padding: '20px', textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}><div className="print-text-warning" style={{ fontSize: '11px', color: '#b45309', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>Soma das Parcelas Mensais</div><div className="print-text-warning" style={{ fontSize: '28px', fontWeight: 800, color: '#f59e0b', lineHeight: '1.2' }}>{formatarMoeda(totalMensalGeral)} <span style={{ fontSize: '14px', fontWeight: 700 }}>/mês</span></div><div style={{ fontSize: '10.5px', color: '#b45309', marginTop: '4px' }}>{temItemParcelado ? 'Quanto será pago por mês somando todas as parcelas em aberto' : 'Nenhum item parcelado neste orçamento'}</div></div></div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {Object.keys(orcamentoPorLoja).map((loja, index) => {
                   const dados = orcamentoPorLoja[loja];
+                  const lojaTemParcelado = dados.itens.some(i => i.parcelas > 1 && i.statusItem !== 'Reprovado');
                   return (
                     <div key={index} className="print-card-loja" style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', borderTop: '4px solid var(--primary-light)', borderRadius: '12px', overflow: 'hidden' }}>
-                      <div className="print-loja-header" style={{ background: 'var(--surface-2)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
+                      <div className="print-loja-header" style={{ background: 'var(--surface-2)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', gap: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><div className="no-print" style={{ width: '40px', height: '40px', background: 'var(--surface-3)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className="bi bi-shop text-primary" style={{ fontSize: '20px' }}></i></div><div><h3 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)' }}>{loja}</h3><div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{dados.itens.length} produto(s)</div></div></div>
-                        <div style={{ textAlign: 'right' }}><div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Subtotal Aprovado na Loja</div><div style={{ fontSize: '18px', fontWeight: 900, color: '#10b981' }}>{formatarMoeda(dados.totalAprovado)}</div><div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Total Cotado: {formatarMoeda(dados.total)}</div></div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Subtotal Aprovado na Loja</div>
+                          <div style={{ fontSize: '18px', fontWeight: 900, color: '#10b981' }}>{formatarMoeda(dados.totalAprovado)}</div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Total Cotado: {formatarMoeda(dados.total)}</div>
+                          {lojaTemParcelado && <div style={{ fontSize: '10.5px', color: '#f59e0b', fontWeight: 700, marginTop: '2px' }}>Comprometimento mensal (parcelas): {formatarMoeda(dados.valorParcelaMes)}/mês</div>}
+                        </div>
                       </div>
                       <div style={{ padding: '0 20px 10px' }}>
                         <table className="print-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-                          <thead><tr><th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px' }}>Aprovação</th><th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px' }}>Produto</th><th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px' }}>Status da Compra</th><th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '12px' }}>Qtd x Valor</th><th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px' }}>Pgto</th><th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px' }}>Total</th><th className="no-print"></th></tr></thead>
+                          <thead><tr><th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px' }}>Aprovação</th><th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px' }}>Produto</th><th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px' }}>Status da Compra</th><th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '12px' }}>Qtd x Valor Unit.</th><th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '12px' }}>Pagamento / Parcelas</th><th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '12px' }}>Valor Total do Item</th><th className="no-print"></th></tr></thead>
                           <tbody>
                             {dados.itens.map(item => {
                               const isReprovado = item.statusItem === 'Reprovado';
+                              const totalItem = item.valorUnitario * item.quantidade;
+                              const isParcelado = item.parcelas > 1;
                               return (
                                 <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', opacity: isReprovado ? 0.45 : 1 }}>
                                   <td style={{ padding: '12px 8px', minWidth: '130px' }}>
@@ -399,7 +506,20 @@ export default function Orcamentos() {
                                   </td>
                                   <td style={{ padding: '12px 8px', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', textDecoration: isReprovado ? 'line-through' : 'none' }}>
                                     <div>{item.produto}</div>
-                                    {item.linkProduto && <a href={item.linkProduto} target="_blank" rel="noopener noreferrer" className="print-link no-print" style={{ fontSize: '11px', color: '#3b82f6', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}><i className="bi bi-box-arrow-up-right"></i> Link da Loja</a>}
+                                    {/* 🔗 Link do produto: agora SEM a classe "no-print", para permanecer
+                                        visível e clicável tanto na tela quanto no PDF exportado.
+                                        A classe "print-link" garante a cor/estilo correto na impressão. */}
+                                    {item.linkProduto && (
+                                      <a
+                                        href={item.linkProduto}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="print-link"
+                                        style={{ fontSize: '11px', color: '#3b82f6', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}
+                                      >
+                                        <i className="bi bi-box-arrow-up-right"></i> Link da Loja
+                                      </a>
+                                    )}
                                   </td>
                                   <td style={{ padding: '12px 8px', minWidth: '160px' }}>
                                     {isReprovado ? (
@@ -412,11 +532,50 @@ export default function Orcamentos() {
                                     )}
                                   </td>
                                   <td style={{ padding: '12px 8px', textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                                    <div className="d-flex align-items-center justify-content-center gap-2 no-print"><input type="number" min="1" value={item.quantidade} onChange={(e) => alterarQuantidadeItem(item.id, parseInt(e.target.value) || 1)} className="form-control-custom" style={{ width: '50px', padding: '2px 4px', textAlign: 'center', fontSize: '12px', height: '26px' }} disabled={isReprovado}/><span>x {formatarMoeda(item.valorUnitario)}</span></div>
+                                    <div className="d-flex align-items-center justify-content-center gap-2 no-print">
+                                      <input type="number" min="1" value={item.quantidade} onChange={(e) => alterarQuantidadeItem(item.id, parseInt(e.target.value) || 1)} className="form-control-custom" style={{ width: '50px', padding: '2px 4px', textAlign: 'center', fontSize: '12px', height: '26px' }} disabled={isReprovado}/>
+                                      <span>x</span>
+                                      <input
+                                        type="text"
+                                        key={`valor-${item.id}-${item.valorUnitario}`}
+                                        defaultValue={item.valorUnitario}
+                                        onBlur={(e) => alterarValorItem(item.id, e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                                        className="form-control-custom"
+                                        style={{ width: '80px', padding: '2px 4px', textAlign: 'center', fontSize: '12px', height: '26px' }}
+                                        disabled={isReprovado}
+                                        title="Clique para editar o valor unitário"
+                                      />
+                                    </div>
                                     <span className="d-none d-print-inline"><strong>{item.quantidade}x</strong> {formatarMoeda(item.valorUnitario)}</span>
                                   </td>
-                                  <td style={{ padding: '12px 8px' }}><div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.formaPagamento} {item.parcelas > 1 && <span style={{ color: 'var(--warning)', marginLeft: '6px' }}>({item.parcelas}x)</span>}</div></td>
-                                  <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', fontWeight: 800, color: isReprovado ? 'var(--text-muted)' : 'var(--text-primary)' }}>{formatarMoeda(item.valorUnitario * item.quantidade)}</td>
+                                  <td style={{ padding: '12px 8px', minWidth: '150px' }}>
+                                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.formaPagamento}</div>
+                                    {item.formaPagamento !== 'Pix' ? (
+                                      <div className="no-print d-flex align-items-center gap-1 mt-1">
+                                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Parcelas:</span>
+                                        <select
+                                          className="form-select-custom btn-sm"
+                                          value={item.parcelas}
+                                          onChange={(e) => alterarParcelasItem(item.id, parseInt(e.target.value))}
+                                          disabled={isReprovado}
+                                          style={{ fontSize: '11px', padding: '2px 6px', width: 'auto' }}
+                                          title="Alterar em quantas vezes este item foi parcelado"
+                                        >
+                                          {[...Array(12)].map((_, i) => <option key={i + 1} value={i + 1}>{i + 1}x</option>)}
+                                        </select>
+                                      </div>
+                                    ) : null}
+                                    <span className="d-none d-print-inline fw-semibold" style={{ fontSize: '11px', color: '#f59e0b' }}>{isParcelado ? `${item.parcelas}x` : ''}</span>
+                                  </td>
+                                  <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', fontWeight: 800, color: isReprovado ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                                    <div>{formatarMoeda(totalItem)}</div>
+                                    {isParcelado && !isReprovado && (
+                                      <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#f59e0b', marginTop: '2px' }}>
+                                        {item.parcelas}x de {formatarMoeda(totalItem / item.parcelas)}
+                                      </div>
+                                    )}
+                                  </td>
                                   <td className="no-print" style={{ textAlign: 'center' }}><button onClick={() => removerItem(item.id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }} title="Remover Item"><i className="bi bi-x-circle-fill" style={{ fontSize: '16px' }}></i></button></td>
                                 </tr>
                               );
@@ -427,6 +586,23 @@ export default function Orcamentos() {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* ── ÁREA DE APROVAÇÃO / ASSINATURA ── */}
+              <div className="print-assinatura" style={{ marginTop: '32px', paddingTop: '20px', borderTop: '2px solid var(--border)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '24px' }}>
+                <div style={{ flex: 1, minWidth: '220px' }}>
+                  <div style={{ borderTop: '1px solid var(--text-muted)', marginTop: '50px', paddingTop: '8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    Assinatura do Responsável / Aprovador
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: '220px' }}>
+                  <div style={{ borderTop: '1px solid var(--text-muted)', marginTop: '50px', paddingTop: '8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    Data da Aprovação: ____ / ____ / ______
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop: '16px', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                Documento gerado em {dataAtual} pelo Sistema Centriar — Almoxarifado
               </div>
             </div>
           )}
